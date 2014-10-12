@@ -65,15 +65,30 @@ class irc:
         logging.info('IRC: joined channel {0}'.format(self.config['channel']))
         # Change self variable and return
         self.sock = sock
+        self.message = ''
         return
 
     def parseMessage(self):
         """
         Parse a message, doing any IRC-related work and returns a list with
-        parsed data related to the event. Ex: ['subscription', 'funknapkin']
+        parsed data related to the event.
+        Ex: [['subscription', 'funknapkin'], ['join', 'user1','user2'],...]
         """
-        logging.debug('IRC chat: {0}'.format(self.message))
-        return
+        # Split messages for parsing
+        messages = self.message.split('\r\n')
+        if self.message[-2:] != '\r\n':
+            self.message = messages[-1]
+        else:
+            self.message = ''
+        messages = messages[:-1]
+        # Parse messages
+        retval = []
+        for msg in messages:
+            logging.debug('IRC chat in: {0}'.format(msg))
+            if msg[:4] == 'PING':
+                self.sock.send('PONG'.encode())
+                logging.debug('IRC chat out: PONG')
+        return retval
 
     def receiveMessage(self):
         """Wait for a message on the IRC channel.
@@ -85,9 +100,11 @@ class irc:
         if not self.sock:
             return false
         self.sock.settimeout(None)
-        self.message = self.sock.recv(
-            self.config['buffer_size']).decode().rstrip()
-        if len(self.message) == 0:
+        new_message = self.sock.recv(
+            self.config['buffer_size']).decode()
+        self.message = self.message + new_message
+        if len(new_message) == 0:
+            logging.warning('IRC: connection lost')
             return False
         else:
             return True

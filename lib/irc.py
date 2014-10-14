@@ -62,6 +62,7 @@ class irc:
         channel = self.config['channel'] if self.config['channel'][0] == '#' \
             else '#{0}'.format(self.config['channel'])
         sock.send('JOIN {0}\r\n'.format(channel).encode())
+        sock.send('TWITCHCLIENT 3\r\n'.encode())
         logging.info('IRC: joined channel {0}'.format(self.config['channel']))
         # Change self variable and return
         self.sock = sock
@@ -86,8 +87,8 @@ class irc:
         for msg in messages:
             logging.debug('IRC chat in: {0}'.format(msg))
             if msg[:4] == 'PING':
-                self.sock.send('PONG'.encode())
-                logging.debug('IRC chat out: PONG')
+                self.sock.send('PONG tmi.twitch.tv\r\n'.encode())
+                logging.debug('IRC chat out: PONG tmi.twitch.tv')
         return retval
 
     def receiveMessage(self):

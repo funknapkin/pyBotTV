@@ -1,15 +1,43 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
+# TODO:
+#   - Finish twitchparser1 for all messages
+#       - Mod demoted event
+#   - Simple GTK chat viewer
+#       - Mostly done, but need ScrolledWindow()
+#   - Finish and test twitchparser2 and twitchparser3
+#   - Update UML
+
 import logging
-import sys
+import threading
+from gi.repository import Gtk
 
-import lib.config as config
-import lib.irc as irc
+from gui.mainwindow import MainWindow
+from lib import config
+from lib.irceventgenerator import IrcEventGenerator
 
 
-def main():
-    c = config.config('./config.yaml')
+def gui_main(retval):
+    win = MainWindow()
+    win.connect('delete-event', Gtk.main_quit)
+    win.show_all()
+    retval.append(win)
+    return
+
+
+def irc_main(config, glib_func):
+    irc_event_generator = IrcEventGenerator(config, glib_func)
+    irc_event_generator.run()
+    return
+
+if __name__ == '__main__':
+    # Load config file
+    try:
+        c = config.config('./config.yaml')
+    except RuntimeError:
+        print('Invalid config file')
+        sys.exit(0)
     # Configure logger
     log_levels = {
         'debug': logging.DEBUG, 'info': logging.INFO,
@@ -18,17 +46,15 @@ def main():
     logging.basicConfig(
         filename=c['debug']['log-file'], filemode='w',
         level=log_levels[c['debug']['log-level']])
-    # Main loop
-    while True:
-        # Connect to IRC
-        irc_sock = irc.irc(c)
-        try:
-            irc_sock.connect()
-        except irc.ircException as e:
-            logging.error('IRC error: {0}'.format(e.value))
-        # Receive messages
-        while(irc_sock.receiveMessage()):
-            irc_sock.parseMessage()
-
-if __name__ == "__main__":
-    main()
+    # Create threads
+    win = []
+    gui_thread = threading.Thread(
+        target=gui_main, daemon=False,
+        args=(win,))
+    gui_thread.start()
+    gui_thread.join()
+    irc_thread = threading.Thread(
+        target=irc_main, daemon=True,
+        args=(c, win[0].irchandler.receive_message))
+    irc_thread.start()
+    Gtk.main()

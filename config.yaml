@@ -6,5 +6,5 @@ password: 'oauth:mj58l4yo1e4y8d4ecggtqihxdqa1nj'
 buffer_size: 4096
 
 debug:
-    log-level: 'debug' #debug, info, warning, error, critical
+    log-level: 'warning' #debug, info, warning, error, critical
     log-file: 'chat.log'

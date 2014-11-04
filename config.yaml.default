@@ -1,8 +1,8 @@
 server: 'irc.twitch.tv'
 port: 6667
-channel: '#northernlion'
-user: 'funknapkin'
-password: 'oauth:mj58l4yo1e4y8d4ecggtqihxdqa1nj'
+channel: '#channel'
+user: 'username'
+password: 'oauth:your_key_here'
 buffer_size: 4096
 
 debug:

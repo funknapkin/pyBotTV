@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-from lib.irc import Irc
+from lib.irc import Irc, IrcError
 from lib.twitchparser1 import TwitchParser1 as IrcParser
 
 from gi.repository import GLib

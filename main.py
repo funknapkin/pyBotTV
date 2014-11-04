@@ -4,10 +4,13 @@
 # TODO:
 #   - Finish twitchparser1 for all messages
 #       - Mod demoted event
+#   - Add events to IrcEventGenerator for connecting/connected/disconnected
+#       - Display those on the status bar
 #   - Simple GTK chat viewer
-#       - Mostly done, but need ScrolledWindow()
+#       - Mostly done, but need a max length on chat
 #   - Finish and test twitchparser2 and twitchparser3
 #   - Update UML
+#   - Add a menubar with the option to quit
 
 import logging
 import threading

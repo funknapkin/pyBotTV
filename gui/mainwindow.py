@@ -26,7 +26,9 @@ class MainWindow(Gtk.Window):
         self.irchandler.register_observer(self.chat, 'MSG')
         self.irchandler.register_observer(self.chat, 'SUBSCRIBER')
         self.irchandler.register_observer(self.subscriber, 'SUBSCRIBER')
-        self.irchandler.register_observer(self.status, 'SUBSCRIBER')
+        self.irchandler.register_observer(self.status, 'CONNECTING')
+        self.irchandler.register_observer(self.status, 'CONNECTED')
+        self.irchandler.register_observer(self.status, 'DISCONNECTED')
 
     def _init_layout(self):
         # Init grid

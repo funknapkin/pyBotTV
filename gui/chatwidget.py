@@ -19,6 +19,8 @@ class ChatWidget(Gtk.ScrolledWindow):
         self.text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
         self.add(self.text_view)
         # Bind events and init misc stuff
+        self.msg_count = 0
+        self.max_messages = 100
         self.text_view.connect('size-allocate', self.on_text_changed)
         self.tag_bold = self.text_view.get_buffer().create_tag(
             "bold", weight=Pango.Weight.BOLD)
@@ -26,7 +28,7 @@ class ChatWidget(Gtk.ScrolledWindow):
     def notify(self, event, data):
         if event == 'MSG':
             text_buffer = self.text_view.get_buffer()
-            if text_buffer.get_char_count() != 0:
+            if self.msg_count != 0:
                 text_buffer.insert(text_buffer.get_end_iter(), '\r\n')
             mark = text_buffer.create_mark(
                 None, text_buffer.get_end_iter(), True)
@@ -37,21 +39,16 @@ class ChatWidget(Gtk.ScrolledWindow):
             tag_iter_2.forward_chars(len(data[0]))
             text_buffer.apply_tag(self.tag_bold, tag_iter_1, tag_iter_2)
             text_buffer.delete_mark(mark)
-        elif event == 'SUBSCRIBER':
-            text_buffer = self.get_buffer()
-            if text_buffer.get_char_count() != 0:
-                text_buffer.insert(text_buffer.get_end_iter(), '\r\n')
-            mark = text_buffer.create_mark(
-                None, text_buffer.get_end_iter(), True)
-            text_buffer.insert(text_buffer.get_end_iter(),
-                               '{0} has subscriber!'.format(data[0]))
-            tag_iter_1 = text_buffer.get_iter_at_mark(mark)
-            tag_iter_2 = text_buffer.get_end_iter()
-            text_buffer.apply_tag(self.tag_bold, tag_iter_1, tag_iter_2)
-            text_buffer.delete_mark(mark)
+            self.msg_count += 1
+            if self.msg_count > self.max_messages:
+                iter_1 = text_buffer.get_start_iter()
+                iter_2 = text_buffer.get_iter_at_line(1)
+                text_buffer.delete(iter_1, iter_2)
+                self.msg_count -= 1
         return
 
-    def on_text_changed(self, event, data):
+    def on_text_changed(self, event, data=None):
         adj = self.get_vadjustment()
         adj.set_value(adj.get_upper() - adj.get_page_size())
+        self.text_view.queue_draw()
         return

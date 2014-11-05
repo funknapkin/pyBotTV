@@ -104,6 +104,8 @@ class Irc:
                 A user sent a message to the channel.
             - MOD: ['MOD', 'username']
                 A user was given mod status on the channel.
+            - DEMOD: ['DEMOD', 'username']
+                A mod was demoted on the channel.
             - SUBSCRIBER: ['SUBSCRIBER', 'username']
                 A user subscribed to the channel.
             - USERCOLOR: ['USERCOLOR', 'username', 'color']

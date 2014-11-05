@@ -30,6 +30,9 @@ class TwitchParser1(IrcParser):
         self.mod_re = re.compile(
             r'\A:jtv MODE #(?P<channel>[a-zA-Z0-9_]+) \+o '
             r'(?P<username>[a-zA-Z0-9_]+)\Z')
+        self.demod_re = re.compile(
+            r'\A:jtv MODE #(?P<channel>[a-zA-Z0-9_]+) \-o '
+            r'(?P<username>[a-zA-Z0-9_]+)\Z')
         self.subscribe_re = re.compile(
             r'\A:twitchnotify!twitchnotify@twitchnotify\.tmi\.twitch\.tv '
             r'PRIVMSG #(?P<channel>[a-zA-Z0-9_]+) :(?P<username>[a-zA-Z0-9_]+)'

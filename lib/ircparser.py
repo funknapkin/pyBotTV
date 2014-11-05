@@ -12,6 +12,7 @@ class IrcParser:
         self.part_re = None
         self.msg_re = None
         self.mod_re = None
+        self.demod_re = None
         self.subscribe_re = None
         self.usercolor_re = None
         self.emoteset_re = None
@@ -89,6 +90,10 @@ class IrcParser:
         if match:
             username = match.group('username')
             return ['MOD', username]
+        match = self.demod_re.match(msg)
+        if match:
+            username = match.group('username')
+            return ['DEMOD', username]
         match = self.subscribe_re.match(msg)
         if match:
             username = match.group('username')

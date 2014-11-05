@@ -2,13 +2,10 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Finish twitchparser1 for all messages
-#       - Mod demoted event
-#   - Simple GTK chat viewer
-#       - Mostly done, but need a max length on chat
 #   - Finish and test twitchparser2 and twitchparser3
 #   - Update UML and documentation
 #   - Add a menubar with the option to quit
+#   - Add config options for the GUI in the config file
 
 import logging
 import threading

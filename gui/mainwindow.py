@@ -24,7 +24,6 @@ class MainWindow(Gtk.Window):
     def _init_irc_handler(self):
         self.irchandler = IrcHandler()
         self.irchandler.register_observer(self.chat, 'MSG')
-        self.irchandler.register_observer(self.chat, 'SUBSCRIBER')
         self.irchandler.register_observer(self.subscriber, 'SUBSCRIBER')
         self.irchandler.register_observer(self.status, 'CONNECTING')
         self.irchandler.register_observer(self.status, 'CONNECTED')

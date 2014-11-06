@@ -11,6 +11,10 @@ from gui.subscriberwidget import SubscriberWidget
 
 class MainWindow(Gtk.Window):
     def __init__(self):
+        """
+        This class creates the main window for this program's GUI. It
+        initializes relevant widgets.
+        """
         Gtk.Window.__init__(self, title='pyBotTV')
         self._init_chat_widget()
         self._init_subscriber_widget()
@@ -30,7 +34,6 @@ class MainWindow(Gtk.Window):
         self.irchandler.register_observer(self.status, 'DISCONNECTED')
 
     def _init_layout(self):
-        # Init grid
         self.grid = Gtk.Grid()
         self.grid.set_row_spacing(6)
         self.grid.set_column_spacing(6)

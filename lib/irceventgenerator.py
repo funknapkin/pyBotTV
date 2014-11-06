@@ -9,13 +9,22 @@ from gi.repository import GLib
 
 class IrcEventGenerator:
     def __init__(self, config, glib_func):
+        """
+        This class handles the Irc subclass to receive messages, and sends
+        signals to the GUI after parsing those messages.
+        """
         self.config = config
         self.glib_func = glib_func
 
     def run(self):
         """
-        Connect to the IRC server and send events to the GUI. In addition to
-        the events defined by Irc, the following events are also sent:
+        Connect to the IRC server and send events to the GUI. This funtion is
+        an endless loop that never exits, as it waits for a message before
+        sending a signal to the GUI. If the connection to the server is lost,
+        the connection is automatically re-established.
+
+        In addition to the events defined by Irc, the following events are
+        also sent:
         - CONNECTING: ['CONNECTING']
             Connecting to the server.
         - CONNECTED: ['CONNECTED']

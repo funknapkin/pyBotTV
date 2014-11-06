@@ -3,7 +3,6 @@
 
 # TODO:
 #   - Finish and test twitchparser2 and twitchparser3
-#   - Update UML and documentation
 #   - Add a menubar with the option to quit
 #   - Add config options for the GUI in the config file
 

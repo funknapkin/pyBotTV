@@ -6,6 +6,9 @@ from gi.repository import Gtk, Pango
 
 class SubscriberWidget(Gtk.ScrolledWindow):
     def __init__(self):
+        """
+        This widget shows new subscribers in a text box.
+        """
         # Init ScrolledWindow
         Gtk.ScrolledWindow.__init__(self)
         self.set_hexpand(True)
@@ -21,11 +24,18 @@ class SubscriberWidget(Gtk.ScrolledWindow):
         # Bind events and init misc stuff
         self.msg_count = 0
         self.max_messages = 30
-        self.text_view.connect('size-allocate', self.on_text_changed)
+        self.text_view.connect('size-allocate', self.scroll_bottom)
         self.tag_bold = self.text_view.get_buffer().create_tag(
             "bold", weight=Pango.Weight.BOLD)
 
     def notify(self, event, data):
+        """
+        Notify this widget of an event.
+
+        Args:
+            event: Type of the event
+            data: Additionnal data for this event
+        """
         if event == 'SUBSCRIBER':
             text_buffer = self.text_view.get_buffer()
             if self.msg_count != 0:
@@ -45,7 +55,14 @@ class SubscriberWidget(Gtk.ScrolledWindow):
                 self.msg_count -= 1
         return
 
-    def on_text_changed(self, event, data=None):
+    def scroll_bottom(self, event, data=None):
+        """
+        Scroll to the bottom of the window.
+
+        Args:
+            event: Event that called this function
+            data: Additionnal data for this event
+        """
         adj = self.get_vadjustment()
         adj.set_value(adj.get_upper() - adj.get_page_size())
         self.text_view.queue_draw()

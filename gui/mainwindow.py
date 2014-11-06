@@ -28,6 +28,10 @@ class MainWindow(Gtk.ApplicationWindow):
         self._init_layout()
 
     def on_app_quit(self, *args):
+        """
+        Function called when the 'quit' action is activated. Calls GTK
+        to close the window.
+        """
         Gtk.main_quit()
 
     def _init_chat_widget(self):

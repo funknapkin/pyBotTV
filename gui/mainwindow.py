@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-from gi.repository import Gtk
+from gi.repository import Gtk, Gio, Gdk
 
 from gui.chatwidget import ChatWidget
 from gui.irchandler import IrcHandler
@@ -27,7 +27,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self._init_irc_handler()
         self._init_layout()
 
-    def on_app_quit(self, event, data=None):
+    def on_app_quit(self, *args):
         Gtk.main_quit()
 
     def _init_chat_widget(self):
@@ -45,15 +45,22 @@ class MainWindow(Gtk.ApplicationWindow):
         self.grid = Gtk.Grid()
         self.grid.set_row_spacing(6)
         self.grid.set_column_spacing(6)
-        self.grid.attach(self.menu, 0, 0, 1, 1)
+        self.grid.attach(self.menu.menubar, 0, 0, 1, 1)
         self.grid.attach(self.chat, 0, 1, 1, 4)
         self.grid.attach(self.subscriber, 0, 5, 1, 1)
         self.grid.attach(self.status, 0, 6, 1, 1)
         self.add(self.grid)
 
     def _init_menu_bar(self):
-        self.menu = MenuBar()
-        self.menu.filemenu_items['Quit'].connect('activate', self.on_app_quit)
+        action_group = Gio.SimpleActionGroup()
+        self.menu = MenuBar(action_group, 'app')
+        self.insert_action_group('app', action_group)
+        action_group.lookup_action('quit').connect(
+            'activate', self.on_app_quit)
+        accel_group = Gtk.AccelGroup()
+        accel_group.connect(Gdk.KEY_q, Gdk.ModifierType.CONTROL_MASK,
+                            0, self.on_app_quit)
+        self.add_accel_group(accel_group)
 
     def _init_status_bar(self):
         self.status = StatusBar()

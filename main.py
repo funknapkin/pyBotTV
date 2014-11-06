@@ -3,7 +3,6 @@
 
 # TODO:
 #   - Finish and test twitchparser2 and twitchparser3
-#   - Add a menubar with the option to quit
 #   - Add config options for the GUI in the config file
 
 import logging

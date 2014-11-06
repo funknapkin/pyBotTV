@@ -7,20 +7,28 @@ from gui.chatwidget import ChatWidget
 from gui.irchandler import IrcHandler
 from gui.statusbar import StatusBar
 from gui.subscriberwidget import SubscriberWidget
+from gui.menubar import MenuBar
 
 
-class MainWindow(Gtk.Window):
+class MainWindow(Gtk.ApplicationWindow):
     def __init__(self):
         """
         This class creates the main window for this program's GUI. It
         initializes relevant widgets.
         """
         Gtk.Window.__init__(self, title='pyBotTV')
+        # Set window options
+        self.set_default_size(640, 480)
+        # Init widgets
         self._init_chat_widget()
         self._init_subscriber_widget()
         self._init_status_bar()
+        self._init_menu_bar()
         self._init_irc_handler()
         self._init_layout()
+
+    def on_app_quit(self, event, data=None):
+        Gtk.main_quit()
 
     def _init_chat_widget(self):
         self.chat = ChatWidget()
@@ -37,10 +45,15 @@ class MainWindow(Gtk.Window):
         self.grid = Gtk.Grid()
         self.grid.set_row_spacing(6)
         self.grid.set_column_spacing(6)
-        self.grid.attach(self.chat, 1, 1, 1, 4)
-        self.grid.attach(self.subscriber, 1, 5, 1, 1)
-        self.grid.attach(self.status, 1, 6, 1, 1)
+        self.grid.attach(self.menu, 0, 0, 1, 1)
+        self.grid.attach(self.chat, 0, 1, 1, 4)
+        self.grid.attach(self.subscriber, 0, 5, 1, 1)
+        self.grid.attach(self.status, 0, 6, 1, 1)
         self.add(self.grid)
+
+    def _init_menu_bar(self):
+        self.menu = MenuBar()
+        self.menu.filemenu_items['Quit'].connect('activate', self.on_app_quit)
 
     def _init_status_bar(self):
         self.status = StatusBar()

@@ -2,7 +2,6 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Finish and test twitchparser2 and twitchparser3
 #   - Add config options for the GUI in the config file
 
 import logging

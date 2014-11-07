@@ -2,7 +2,7 @@
 # -*- encoding:utf-8 -*-
 
 from lib.irc import Irc, IrcError
-from lib.twitchparser1 import TwitchParser1 as IrcParser
+from lib.twitchparser3 import TwitchParser3 as IrcParser
 
 from gi.repository import GLib
 
@@ -38,7 +38,7 @@ class IrcEventGenerator:
             irc_sock = Irc(self.config)
             irc_sock.set_parser(IrcParser())
             try:
-                irc_sock.connect('TWITCHCLIENT 1\r\n')
+                irc_sock.connect('TWITCHCLIENT 3\r\n')
             except IrcError as e:
                 logging.error('IRC error: {0}'.format(e.value))
                 sys.exit(0)

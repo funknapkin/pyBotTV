@@ -11,12 +11,16 @@ from gui.menubar import MenuBar
 
 
 class MainWindow(Gtk.ApplicationWindow):
-    def __init__(self):
+    def __init__(self, config):
         """
         This class creates the main window for this program's GUI. It
         initializes relevant widgets.
+
+        Args:
+            config: A dictionnary with configuration options.
         """
         Gtk.Window.__init__(self, title='pyBotTV')
+        self.config = config
         # Set window options
         self.set_default_size(640, 480)
         # Init widgets
@@ -35,10 +39,10 @@ class MainWindow(Gtk.ApplicationWindow):
         Gtk.main_quit()
 
     def _init_chat_widget(self):
-        self.chat = ChatWidget()
+        self.chat = ChatWidget(self.config)
 
     def _init_irc_handler(self):
-        self.irchandler = IrcHandler()
+        self.irchandler = IrcHandler(self.config)
         self.irchandler.register_observer(self.chat, 'MSG')
         self.irchandler.register_observer(self.subscriber, 'SUBSCRIBER')
         self.irchandler.register_observer(self.status, 'CONNECTING')
@@ -57,7 +61,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def _init_menu_bar(self):
         action_group = Gio.SimpleActionGroup()
-        self.menu = MenuBar(action_group, 'app')
+        self.menu = MenuBar(self.config, action_group, 'app')
         self.insert_action_group('app', action_group)
         action_group.lookup_action('quit').connect(
             'activate', self.on_app_quit)
@@ -67,7 +71,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.add_accel_group(accel_group)
 
     def _init_status_bar(self):
-        self.status = StatusBar()
+        self.status = StatusBar(self.config)
 
     def _init_subscriber_widget(self):
-        self.subscriber = SubscriberWidget()
+        self.subscriber = SubscriberWidget(self.config)

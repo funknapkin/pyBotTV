@@ -1,9 +1,14 @@
-server: 'irc.twitch.tv'
-port: 6667
-channel: '#channel'
-user: 'username'
-password: 'oauth:your_key_here'
-buffer_size: 4096
+irc:
+    server: 'irc.twitch.tv'
+    port: 6667
+    channel: '#channel'
+    user: 'username'
+    password: 'oauth:your_key_here'
+    buffer_size: 4096
+
+gui:
+    chat_maxmessages: 200
+    subscriber_maxmessages: 50
 
 debug:
     log-level: 'warning' #debug, info, warning, error, critical

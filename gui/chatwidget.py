@@ -5,12 +5,16 @@ from gi.repository import Gtk, Pango
 
 
 class ChatWidget(Gtk.ScrolledWindow):
-    def __init__(self):
+    def __init__(self, config):
         """
         This widget shows the chat messages in a text box.
+
+        Args:
+            config: A dictionnary with configuration options.
         """
         # Init ScrolledWindow
         Gtk.ScrolledWindow.__init__(self)
+        self.config = config
         self.set_hexpand(True)
         self.set_vexpand(True)
         self.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.ALWAYS)
@@ -23,7 +27,6 @@ class ChatWidget(Gtk.ScrolledWindow):
         self.add(self.text_view)
         # Bind events and init misc stuff
         self.msg_count = 0
-        self.max_messages = 100
         self.text_view.connect('size-allocate', self.scroll_bottom)
         self.tag_bold = self.text_view.get_buffer().create_tag(
             "bold", weight=Pango.Weight.BOLD)
@@ -50,7 +53,7 @@ class ChatWidget(Gtk.ScrolledWindow):
             text_buffer.apply_tag(self.tag_bold, tag_iter_1, tag_iter_2)
             text_buffer.delete_mark(mark)
             self.msg_count += 1
-            if self.msg_count > self.max_messages:
+            if self.msg_count > self.config['gui']['chat_maxmessages']:
                 iter_1 = text_buffer.get_start_iter()
                 iter_2 = text_buffer.get_iter_at_line(1)
                 text_buffer.delete(iter_1, iter_2)

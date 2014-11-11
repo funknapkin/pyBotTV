@@ -13,8 +13,8 @@ from lib import config
 from lib.irceventgenerator import IrcEventGenerator
 
 
-def gui_main(retval):
-    win = MainWindow()
+def gui_main(config, retval):
+    win = MainWindow(config)
     win.connect('delete-event', Gtk.main_quit)
     win.show_all()
     retval.append(win)
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     win = []
     gui_thread = threading.Thread(
         target=gui_main, daemon=False,
-        args=(win,))
+        args=(c, win))
     gui_thread.start()
     gui_thread.join()
     irc_thread = threading.Thread(

@@ -3,11 +3,15 @@
 
 
 class IrcHandler():
-    def __init__(self):
+    def __init__(self, config):
         """
         This class receives message from the irc thread and notifies the
         widgets.
+
+        Args:
+            config: A dictionnary with configuration options.
         """
+        self.config = config
         self.observers = {}
 
     def notify_observers(self, event, data):

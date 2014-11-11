@@ -5,12 +5,16 @@ from gi.repository import Gtk
 
 
 class StatusBar(Gtk.Statusbar):
-    def __init__(self):
+    def __init__(self, config):
         """
         This widget creates a status bar meant to be displayed at the bottom of
         the screen. It shows the state of the IRC connection.
+
+        Args:
+            config: A dictionnary with configuration options.
         """
         Gtk.Statusbar.__init__(self)
+        self.config = config
         self.set_halign(Gtk.Align.END)
         self.context_id = self.get_context_id('info')
         self.first_connection = True

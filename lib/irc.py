@@ -41,27 +41,30 @@ class Irc:
         # Connect to server
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((self.config['server'], self.config['port']))
+            sock.connect((self.config['irc']['server'],
+                          self.config['irc']['port']))
             logging.info(
                 'IRC: connected to the server {0}:{1}'.format(
-                    self.config['server'], self.config['port']))
+                    self.config['irc']['server'], self.config['irc']['port']))
         except Exception as e:
             raise IrcError('Cannot connect to the server')
         # Login to the IRC chat room
         sock.settimeout(5)
-        send_data = 'USER {0}\r\n'.format(self.config['user']).encode()
+        send_data = 'USER {0}\r\n'.format(self.config['irc']['user']).encode()
         if sock.send(send_data) != len(send_data):
             raise IrcError('Failed to send login data to the server')
-        send_data = 'PASS {0}\r\n'.format(self.config['password']).encode()
+        send_data = 'PASS {0}\r\n'.format(
+            self.config['irc']['password']).encode()
         if sock.send(send_data) != len(send_data):
             raise IrcError('Failed to send login data to the server')
-        send_data = 'NICK {0}\r\n'.format(self.config['user']).encode()
+        send_data = 'NICK {0}\r\n'.format(self.config['irc']['user']).encode()
         if sock.send(send_data) != len(send_data):
             raise IrcError('Failed to send login data to the server')
-        response = sock.recv(self.config['buffer_size']).decode().rstrip()
+        response = sock.recv(
+            self.config['irc']['buffer_size']).decode().rstrip()
         if self.parser.check_connection_success(response):
             logging.info('IRC: successfully logged in with username {0}'
-                         .format(self.config['user']))
+                         .format(self.config['irc']['user']))
         else:
             raise IrcError('Login failed with message {0}'.format(response))
         # Send post-init message to the server
@@ -78,8 +81,10 @@ class Irc:
                 raise IrcError(
                     'Failed to send post-init message to the server')
         # Join channel
-        sock.send('JOIN {0}\r\n'.format(self.config['channel']).encode())
-        logging.info('IRC: joined channel {0}'.format(self.config['channel']))
+        sock.send('JOIN {0}\r\n'.format(
+            self.config['irc']['channel']).encode())
+        logging.info('IRC: joined channel {0}'.format(
+            self.config['irc']['channel']))
         # Change self variable and return
         self.sock = sock
         self.message = ''
@@ -160,7 +165,7 @@ class Irc:
         self.sock.settimeout(timeout)
         try:
             new_message = self.sock.recv(
-                self.config['buffer_size']).decode()
+                self.config['irc']['buffer_size']).decode()
         except socket.timeout:
             return False
         self.message = self.message + new_message

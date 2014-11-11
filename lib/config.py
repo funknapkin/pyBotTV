@@ -25,14 +25,18 @@ def config(yaml_path):
     except AttributeError:
         data = yaml.load(yaml_file, yaml.CLoader)
     try:
-        data['server'] = str(data['server'])
-        data['port'] = int(data['port'])
-        data['channel'] = str(data['channel'])
-        data['channel'] = data['channel'] if data['channel'][0] == '#' \
-            else '#{0}'.format(data['channel'])
-        data['user'] = str(data['user'])
-        data['password'] = str(data['password'])
-        data['buffer_size'] = int(data['buffer_size'])
+        data['irc']['server'] = str(data['irc']['server'])
+        data['irc']['port'] = int(data['irc']['port'])
+        data['irc']['channel'] = str(data['irc']['channel'])
+        data['irc']['channel'] = data['irc']['channel'] if \
+            data['irc']['channel'][0] == '#' else \
+            '#{0}'.format(data['irc']['channel'])
+        data['irc']['user'] = str(data['irc']['user'])
+        data['irc']['password'] = str(data['irc']['password'])
+        data['irc']['buffer_size'] = int(data['irc']['buffer_size'])
+        data['gui']['chat_maxmessages'] = int(data['gui']['chat_maxmessages'])
+        data['gui']['subscriber_maxmessages'] = int(
+            data['gui']['subscriber_maxmessages'])
         data['debug']['log-level'] = str(data['debug']['log-level'])
         data['debug']['log-file'] = str(data['debug']['log-file'])
     except KeyError:

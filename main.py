@@ -2,7 +2,10 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Add config options for the GUI in the config file
+#   - Add IRC log
+#   - Add color/icons to chatwidget
+#   - Add clear button to subscriberwidget
+#   - Add notebook with other widgets (poll, etc.)
 
 import logging
 import threading

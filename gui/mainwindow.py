@@ -45,6 +45,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.irchandler = IrcHandler(self.config)
         self.irchandler.register_observer(self.chat, 'MSG')
         self.irchandler.register_observer(self.chat, 'USERCOLOR')
+        self.irchandler.register_observer(self.chat, 'EMOTESET')
         self.irchandler.register_observer(self.subscriber, 'SUBSCRIBER')
         self.irchandler.register_observer(self.status, 'CONNECTING')
         self.irchandler.register_observer(self.status, 'CONNECTED')

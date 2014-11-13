@@ -34,7 +34,13 @@ def config(yaml_path):
         data['irc']['user'] = str(data['irc']['user'])
         data['irc']['password'] = str(data['irc']['password'])
         data['irc']['buffer_size'] = int(data['irc']['buffer_size'])
+        data['gui']['emote_globals_path'] = str(
+            data['gui']['emote_globals_path'])
+        data['gui']['emote_subscriber_path'] = str(
+            data['gui']['emote_subscriber_path'])
+        data['gui']['badges_path'] = str(data['gui']['badges_path'])
         data['gui']['chat_maxmessages'] = int(data['gui']['chat_maxmessages'])
+        data['gui']['chat_linespacing'] = int(data['gui']['chat_linespacing'])
         data['gui']['subscriber_maxmessages'] = int(
             data['gui']['subscriber_maxmessages'])
         data['debug']['log-level'] = str(data['debug']['log-level'])

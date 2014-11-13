@@ -7,7 +7,11 @@ irc:
     buffer_size: 4096
 
 gui:
+    emote_globals_path: './resources/emote_globals/'
+    emote_subscriber_path: './resources/emote_subscriber/'
+    badges_path: './resources/badges/'
     chat_maxmessages: 200
+    chat_linespacing: 0
     subscriber_maxmessages: 50
 
 debug:

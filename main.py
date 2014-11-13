@@ -2,10 +2,18 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
+#   - Add color/icons/emotes to chatwidget
 #   - Add IRC log
-#   - Add color/icons to chatwidget
-#   - Add clear button to subscriberwidget
+#   - Fix colors for some users in chat
+#   - Add clear button + timestamps to subscriberwidget
 #   - Add notebook with other widgets (poll, etc.)
+#
+# Possible improvements:
+#   - Non-blocking emotes download for faster startup
+#   - Don't download emotes list every time app is opened
+#   - Predownload emotes
+#   - Save display names to file
+#   - Add maximum size for 'display_names' dict
 
 import logging
 import threading

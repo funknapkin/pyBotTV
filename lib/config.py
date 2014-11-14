@@ -31,6 +31,7 @@ def config(yaml_path):
         data['irc']['channel'] = data['irc']['channel'] if \
             data['irc']['channel'][0] == '#' else \
             '#{0}'.format(data['irc']['channel'])
+        data['irc']['channel'] = data['irc']['channel'].lower()
         data['irc']['user'] = str(data['irc']['user'])
         data['irc']['password'] = str(data['irc']['password'])
         data['irc']['buffer_size'] = int(data['irc']['buffer_size'])

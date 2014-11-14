@@ -48,6 +48,8 @@ class ChatWidget(Gtk.ScrolledWindow):
         self.color_tag = self.default_tag
         self.emoteset_username = ''
         self.emotesets = []
+        self.specialusers = {}
+        self.moderators = set()
         # Init twitch default colors
         self.default_colors = {
             'Red': '#FF0000',
@@ -65,8 +67,9 @@ class ChatWidget(Gtk.ScrolledWindow):
             'HotPink': '#FF69B4',
             'BlueViolet': '#8A2BE2',
             'SpringGreen': '#00FF7F'}
-        # Download emotes data
+        # Download emotes and badges data
         self._init_emotes_data()
+        self._init_badges_data()
 
     def notify(self, event, data):
         """
@@ -114,7 +117,27 @@ class ChatWidget(Gtk.ScrolledWindow):
             else:
                 text_tag = self.default_tag
             text_buffer.apply_tag(text_tag, tag_iter_1, tag_iter_2)
-            # Add turbo and subscriber icons TODO
+            # Add turbo and subscriber icons
+            if not self.badges_initialized:
+                self._init_badges_data()
+            if self.badges_initialized:
+                status_order = ['admin', 'broadcaster', 'mod', 'staff',
+                                'subscriber', 'turbo']
+                statuses = self.specialusers[data[0]].copy() if data[0] in \
+                    self.specialusers else set()
+                if data[0] == self.config['irc']['channel'][1:]:
+                    statuses.add('broadcaster')
+                elif data[0] in self.moderators:
+                    statuses.add('mod')
+                for specialstatus in reversed(status_order):
+                    if specialstatus in statuses:
+                        image_path = os.path.join(
+                            self.config['gui']['badges_path'],
+                            self.config['irc']['channel'][1:],
+                            '{0}.png'.format(specialstatus))
+                        text_iter = text_buffer.get_iter_at_mark(mark_begin)
+                        pixbuf = GdkPixbuf.Pixbuf.new_from_file(image_path)
+                        text_buffer.insert_pixbuf(text_iter, pixbuf)
             # Add emotes to chat
             to_replace = []  # List of tuples with format (index, name, path)
             if not self.emotes_initialized:
@@ -182,6 +205,15 @@ class ChatWidget(Gtk.ScrolledWindow):
         elif event == 'EMOTESET':
             self.emoteset_username = data[0]
             self.emotesets = data[1:]
+        elif event == 'SPECIALUSER':
+            if data[0] in self.specialusers:
+                self.specialusers[data[0]].add(data[1])
+            else:
+                self.specialusers[data[0]] = set([data[1]])
+        elif event == 'MOD':
+            self.moderators.add(data[0])
+        elif event == 'DEMOD':
+            self.moderators.discart(data[0])
         return
 
     def scroll_bottom(self, event, data=None):
@@ -261,6 +293,45 @@ class ChatWidget(Gtk.ScrolledWindow):
             except OSError:
                 return False
             return True
+
+    def _init_badges_data(self):
+        """
+        Download badges data and icons.
+        """
+        # Get badges data
+        try:
+            request = urllib.request.Request(
+                'https://api.twitch.tv/kraken/chat/{0}/badges'
+                .format(self.config['irc']['channel'][1:]),
+                headers={'Accept': 'application/vnd.twitchtv.v3+json'})
+            u = urllib.request.urlopen(request)
+            s = u.read().decode()
+            j = json.loads(s)
+        except:
+            logging.warning('Chat: failed to get badges data')
+            self.badges_initialized = False
+            return
+        to_download = ['admin', 'broadcaster', 'mod', 'staff', 'turbo',
+                       'subscriber']
+        try:
+            badges_dir = os.path.join(self.config['gui']['badges_path'],
+                                      self.config['irc']['channel'][1:])
+            os.makedirs(badges_dir, exist_ok=True)
+            for badge_name in to_download:
+                badge_path = os.path.join(
+                    badges_dir, '{0}.png'.format(badge_name))
+                if os.access(badge_path, os.F_OK):
+                    continue  # File already exists
+                badge_url = j[badge_name]['image']
+                badge = urllib.request.urlopen(badge_url)
+                badge_file = open(badge_path, 'wb')
+                badge_file.write(badge.read())
+                badge_file.close()
+            self.badges_initialized = True
+        except:
+            logging.warning('Chat: failed to download badges')
+            self.badges_initialized = False
+            return
 
     def _init_emotes_data(self):
         """

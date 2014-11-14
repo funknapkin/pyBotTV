@@ -2,7 +2,8 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Add color/icons/emotes to chatwidget
+#   - Save usercolor/specialuser to dict
+#   - Set a  maximum size for dicts using collection.OrderedDict
 #   - Add IRC log
 #   - Fix colors for some users in chat
 #   - Add clear button + timestamps to subscriberwidget
@@ -13,7 +14,6 @@
 #   - Don't download emotes list every time app is opened
 #   - Predownload emotes
 #   - Save display names to file
-#   - Add maximum size for 'display_names' dict
 
 import logging
 import threading

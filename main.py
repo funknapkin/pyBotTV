@@ -2,9 +2,7 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Save usercolor/specialuser to dict
 #   - Set a  maximum size for dicts using collection.OrderedDict
-#   - Add IRC log
 #   - Fix colors for some users in chat
 #   - Add clear button + timestamps to subscriberwidget
 #   - Add notebook with other widgets (poll, etc.)

@@ -5,6 +5,7 @@ irc:
     user: 'username'
     password: 'oauth:your_key_here'
     buffer_size: 4096
+    log_file: 'irc.log'
 
 gui:
     emote_globals_path: './resources/emote_globals/'

@@ -4,6 +4,7 @@
 import logging
 import re
 import socket
+import time
 
 
 class IrcError(Exception):
@@ -133,8 +134,11 @@ class Irc:
         messages = messages[:-1]
         # Pass messages to the parser
         retval = []
+        timestamp = time.strftime('%Y-%m-%dT%H:%M:%SZ')
         for msg in messages:
             logging.debug('IRC chat in: {0}'.format(msg))
+            with open(self.config['irc']['log_file'], 'a') as log_file:
+                log_file.write('{0} : {1}\r\n'.format(timestamp, msg))
             parsed_msg = self.parser.parse_message(msg)
             if parsed_msg is None:
                 logging.warning('IRC could not parse message: {0}'.format(msg))

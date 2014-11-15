@@ -35,6 +35,7 @@ def config(yaml_path):
         data['irc']['user'] = str(data['irc']['user'])
         data['irc']['password'] = str(data['irc']['password'])
         data['irc']['buffer_size'] = int(data['irc']['buffer_size'])
+        data['irc']['log_file'] = str(data['irc']['log_file'])
         data['gui']['emote_globals_path'] = str(
             data['gui']['emote_globals_path'])
         data['gui']['emote_subscriber_path'] = str(

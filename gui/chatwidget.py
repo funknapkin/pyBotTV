@@ -44,10 +44,8 @@ class ChatWidget(Gtk.ScrolledWindow):
         self.default_tag = self.text_view.get_buffer().create_tag(
             "default", weight=Pango.Weight.BOLD, foreground='#000000')
         self.display_names = {}
-        self.color_username = ''
-        self.color_tag = self.default_tag
-        self.emoteset_username = ''
-        self.emotesets = []
+        self.usercolors = {}
+        self.emotesets = {}
         self.specialusers = {}
         self.moderators = set()
         # Init twitch default colors
@@ -112,8 +110,8 @@ class ChatWidget(Gtk.ScrolledWindow):
             tag_iter_1 = text_buffer.get_iter_at_mark(mark_begin)
             tag_iter_2 = text_buffer.get_iter_at_mark(mark_begin)
             tag_iter_2.forward_chars(len(display_name))
-            if data[0] == self.color_username:
-                text_tag = self.color_tag
+            if data[0] in self.usercolors:
+                text_tag = self.usercolors[data[0]]
             else:
                 text_tag = self.default_tag
             text_buffer.apply_tag(text_tag, tag_iter_1, tag_iter_2)
@@ -152,8 +150,8 @@ class ChatWidget(Gtk.ScrolledWindow):
                                 os.path.join(
                                     self.config['gui']['emote_globals_path'],
                                     '{0}.png'.format(globalemote))]))
-            if self.emotes_initialized and data[0] == self.emoteset_username:
-                for emoteset in self.emotesets:
+            if self.emotes_initialized and data[0] in self.emotesets:
+                for emoteset in self.emotesets[data[0]]:
                     if str(emoteset) not in self.emotes_sets:
                         continue
                     emoteset_name = self.emotes_sets[str(emoteset)]
@@ -191,7 +189,6 @@ class ChatWidget(Gtk.ScrolledWindow):
                 text_buffer.delete(iter_1, iter_2)
                 self.msg_count -= 1
         elif event == 'USERCOLOR':
-            self.color_username = data[0]
             if data[1][0] == '#':
                 color = data[1]
             else:
@@ -200,11 +197,10 @@ class ChatWidget(Gtk.ScrolledWindow):
                 except:
                     logging.warning('Chat: Invalid color: {0}'.format(data[1]))
                     color = '#000000'
-            self.color_tag = self.text_view.get_buffer().create_tag(
+            self.usercolors[data[0]] = self.text_view.get_buffer().create_tag(
                 None, weight=Pango.Weight.BOLD, foreground=color)
         elif event == 'EMOTESET':
-            self.emoteset_username = data[0]
-            self.emotesets = data[1:]
+            self.emotesets[data[0]] = data[1:]
         elif event == 'SPECIALUSER':
             if data[0] in self.specialusers:
                 self.specialusers[data[0]].add(data[1])

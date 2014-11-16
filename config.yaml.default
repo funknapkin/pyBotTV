@@ -13,6 +13,7 @@ gui:
     badges_path: './resources/badges/'
     chat_maxmessages: 200
     chat_linespacing: 0
+    chat_cache_size: 500
     subscriber_maxmessages: 50
 
 debug:

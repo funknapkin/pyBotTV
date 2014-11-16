@@ -2,10 +2,9 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Set a  maximum size for dicts using collection.OrderedDict
-#   - Fix colors for some users in chat
 #   - Add clear button + timestamps to subscriberwidget
-#   - Add notebook with other widgets (poll, etc.)
+#   - Add ability to send chat messages to IRC, via a Queue
+#   - Add notebook with other widgets (userlist, poll, etc.)
 #
 # Possible improvements:
 #   - Non-blocking emotes download for faster startup

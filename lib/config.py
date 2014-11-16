@@ -43,6 +43,7 @@ def config(yaml_path):
         data['gui']['badges_path'] = str(data['gui']['badges_path'])
         data['gui']['chat_maxmessages'] = int(data['gui']['chat_maxmessages'])
         data['gui']['chat_linespacing'] = int(data['gui']['chat_linespacing'])
+        data['gui']['chat_cache_size'] = int(data['gui']['chat_cache_size'])
         data['gui']['subscriber_maxmessages'] = int(
             data['gui']['subscriber_maxmessages'])
         data['debug']['log-level'] = str(data['debug']['log-level'])

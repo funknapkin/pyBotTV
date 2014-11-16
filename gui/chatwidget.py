@@ -8,6 +8,7 @@ import os.path
 import re
 import urllib.request
 import urllib.error
+from collections import OrderedDict
 from gi.repository import Gtk, Pango, GdkPixbuf
 
 
@@ -43,10 +44,10 @@ class ChatWidget(Gtk.ScrolledWindow):
         self.text_view.connect('size-allocate', self.scroll_bottom)
         self.default_tag = self.text_view.get_buffer().create_tag(
             "default", weight=Pango.Weight.BOLD, foreground='#000000')
-        self.display_names = {}
-        self.usercolors = {}
-        self.emotesets = {}
-        self.specialusers = {}
+        self.display_names = OrderedDict()
+        self.usercolors = OrderedDict()
+        self.emotesets = OrderedDict()
+        self.specialusers = OrderedDict()
         self.moderators = set()
         # Init twitch default colors
         self.default_colors = {
@@ -81,6 +82,7 @@ class ChatWidget(Gtk.ScrolledWindow):
             # Get display name
             try:
                 display_name = self.display_names[data[0]]
+                self.display_names.move_to_end(data[0])
             except KeyError:
                 try:
                     request = urllib.request.Request(
@@ -92,6 +94,9 @@ class ChatWidget(Gtk.ScrolledWindow):
                     j = json.loads(s)
                     display_name = j['display_name']
                     self.display_names[data[0]] = display_name
+                    cache_size = self.config['gui']['chat_cache_size']
+                    if len(self.display_names) > cache_size:
+                        self.display_names.popitem(last=False)
                 except urllib.error.URLError:
                     display_name = data[0]
             # Add chat message to buffer
@@ -197,15 +202,30 @@ class ChatWidget(Gtk.ScrolledWindow):
                 except:
                     logging.warning('Chat: Invalid color: {0}'.format(data[1]))
                     color = '#000000'
+            if data[0] in self.usercolors:
+                self.usercolors.move_to_end(data[0])
             self.usercolors[data[0]] = self.text_view.get_buffer().create_tag(
                 None, weight=Pango.Weight.BOLD, foreground=color)
+            cache_size = self.config['gui']['chat_cache_size']
+            if len(self.usercolors) > cache_size:
+                self.usercolors.pop_item(last=False)
         elif event == 'EMOTESET':
+            if data[0] in self.emotesets:
+                self.emotesets.move_to_end(data[0])
             self.emotesets[data[0]] = data[1:]
+            cache_size = self.config['gui']['chat_cache_size']
+            if len(self.emotesets) > cache_size:
+                self.emotesets.pop_item(last=False)
         elif event == 'SPECIALUSER':
             if data[0] in self.specialusers:
                 self.specialusers[data[0]].add(data[1])
+                self.specialusers.move_to_end(data[0])
             else:
                 self.specialusers[data[0]] = set([data[1]])
+                cache_size = self.config['gui']['chat_cache_size']
+                if len(self.specialusers) > cache_size:
+                    self.specialusers.pop_item(last=False)
+
         elif event == 'MOD':
             self.moderators.add(data[0])
         elif event == 'DEMOD':

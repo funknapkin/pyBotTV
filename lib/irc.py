@@ -2,6 +2,8 @@
 # -*- encoding:utf-8 -*-
 
 import logging
+import os
+import os.path
 import re
 import socket
 import time
@@ -137,7 +139,10 @@ class Irc:
         timestamp = time.strftime('%Y-%m-%dT%H:%M:%SZ')
         for msg in messages:
             logging.debug('IRC chat in: {0}'.format(msg))
-            with open(self.config['irc']['log_file'], 'a') as log_file:
+            os.makedirs(self.config['irc']['log_folder'], exist_ok=True)
+            log_file_path = os.path.join(self.config['irc']['log_folder'],
+                                         self.config['irc']['channel']+'.log')
+            with open(log_file_path, 'a') as log_file:
                 log_file.write('{0} : {1}\r\n'.format(timestamp, msg))
             parsed_msg = self.parser.parse_message(msg)
             if parsed_msg is None:

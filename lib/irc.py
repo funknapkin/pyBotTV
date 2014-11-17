@@ -29,6 +29,8 @@ class Irc:
             config: config object. See config.py and config.yaml.
         """
         self.config = config
+        self.parser = None
+        self.logging = logging
 
     def connect(self, post_init_msg=None):
         """

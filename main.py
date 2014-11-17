@@ -4,7 +4,6 @@
 # TODO:
 #   - Fix bug where some colors aren't displayed properly
 #       Twitch doesn't always send USERCOLOR; pick a random color
-#   - Test message order when sending message (i.e. test delay)
 #   - Fix badges when channel doesn't have a subscriber icon
 #   - Add clear button + timestamps to subscriberwidget
 #   - Add notebook with other widgets (userlist, poll, etc.)
@@ -25,6 +24,7 @@ from gi.repository import Gtk
 from gui.mainwindow import MainWindow
 from lib import config
 from lib.irceventgenerator import IrcEventGenerator
+from lib.ircsender import IrcSender
 
 
 def gui_main(config, out_queue, retval):
@@ -35,9 +35,15 @@ def gui_main(config, out_queue, retval):
     return
 
 
-def irc_main(config, out_queue, glib_func):
-    irc_event_generator = IrcEventGenerator(config, glib_func, out_queue)
+def irc_main(config, glib_func):
+    irc_event_generator = IrcEventGenerator(config, glib_func)
     irc_event_generator.run()
+    return
+
+
+def irc_sender_main(config, out_queue):
+    irc_sender = IrcSender(config, out_queue)
+    irc_sender.run()
     return
 
 if __name__ == '__main__':
@@ -65,6 +71,10 @@ if __name__ == '__main__':
     gui_thread.join()
     irc_thread = threading.Thread(
         target=irc_main, daemon=True,
-        args=(c, out_queue, win[0].irchandler.receive_message))
+        args=(c, win[0].irchandler.receive_message))
     irc_thread.start()
+    irc_sender_thread = threading.Thread(
+        target=irc_sender_main, daemon=True,
+        args=(c, out_queue))
+    irc_sender_thread.start()
     Gtk.main()

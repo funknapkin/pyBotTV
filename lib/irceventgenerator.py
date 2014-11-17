@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
-import queue
 from lib.irc import Irc, IrcError
 from lib.twitchparser1 import TwitchParser1 as IrcParser
+import logging
+import time
 
 from gi.repository import GLib
 
 
 class IrcEventGenerator:
-    def __init__(self, config, glib_func, out_queue):
+    def __init__(self, config, glib_func):
         """
         This class handles the Irc subclass to receive messages, and sends
         signals to the GUI after parsing those messages.
         """
         self.config = config
         self.glib_func = glib_func
-        self.out_queue = out_queue
 
     def run(self):
         """
@@ -43,26 +43,16 @@ class IrcEventGenerator:
                 irc_sock.connect('TWITCHCLIENT 2\r\n')
             except IrcError as e:
                 logging.error('IRC error: {0}'.format(e.value))
-                sys.exit(0)
+                time.sleep(1)
+                continue
             GLib.idle_add(self.glib_func, ['CONNECTED'])
-            # Receive/send messages until disconnect
+            # Receive messages until disconnect
             try:
                 while(True):
-                    poll_time = self.config['irc']['poll_time']
-                    if irc_sock.receive_message(timeout=poll_time):
+                    if irc_sock.receive_message(timeout=None):
                         messages = irc_sock.parse_message()
                         for msg in messages:
                             GLib.idle_add(self.glib_func, msg)
-                    try:
-                        out_msg = self.out_queue.get(block=False)
-                        out_str = 'PRIVMSG {0} : {1}\r\n'.format(
-                            self.config['irc']['channel'],
-                            out_msg)
-                        irc_sock.send_message(out_str, timeout=None)
-                        event = ['MSG', self.config['irc']['user'], out_msg]
-                        GLib.idle_add(self.glib_func, event)
-                    except queue.Empty:
-                        pass
             except IrcError:
                 pass
             GLib.idle_add(self.glib_func, ['DISCONNECTED'])

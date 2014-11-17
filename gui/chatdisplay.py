@@ -12,7 +12,7 @@ from collections import OrderedDict
 from gi.repository import Gtk, Pango, GdkPixbuf
 
 
-class ChatWidget(Gtk.ScrolledWindow):
+class ChatDisplay(Gtk.ScrolledWindow):
     def __init__(self, config):
         """
         This widget shows the chat messages in a text box.

@@ -3,7 +3,8 @@
 
 from gi.repository import Gtk, Gio, Gdk
 
-from gui.chatwidget import ChatWidget
+from gui.chatdisplay import ChatDisplay
+from gui.chatentry import ChatEntry
 from gui.irchandler import IrcHandler
 from gui.statusbar import StatusBar
 from gui.subscriberwidget import SubscriberWidget
@@ -11,7 +12,7 @@ from gui.menubar import MenuBar
 
 
 class MainWindow(Gtk.ApplicationWindow):
-    def __init__(self, config):
+    def __init__(self, config, out_queue):
         """
         This class creates the main window for this program's GUI. It
         initializes relevant widgets.
@@ -21,10 +22,12 @@ class MainWindow(Gtk.ApplicationWindow):
         """
         Gtk.Window.__init__(self, title='pyBotTV')
         self.config = config
+        self.out_queue = out_queue
         # Set window options
         self.set_default_size(640, 480)
         # Init widgets
-        self._init_chat_widget()
+        self._init_chat_display()
+        self._init_chat_entry()
         self._init_subscriber_widget()
         self._init_status_bar()
         self._init_menu_bar()
@@ -38,8 +41,11 @@ class MainWindow(Gtk.ApplicationWindow):
         """
         Gtk.main_quit()
 
-    def _init_chat_widget(self):
-        self.chat = ChatWidget(self.config)
+    def _init_chat_display(self):
+        self.chat = ChatDisplay(self.config)
+
+    def _init_chat_entry(self):
+        self.chat_entry = ChatEntry(self.config, self.out_queue)
 
     def _init_irc_handler(self):
         self.irchandler = IrcHandler(self.config)
@@ -63,8 +69,11 @@ class MainWindow(Gtk.ApplicationWindow):
         self.grid.set_margin_left(3)
         self.grid.set_margin_right(3)
         self.grid.attach(self.menu.menubar, 0, 0, 1, 1)
+        vbox_chat = Gtk.Box.new(Gtk.Orientation.VERTICAL, 0)
+        vbox_chat.add(self.chat)
+        vbox_chat.add(self.chat_entry)
         frame_chat = Gtk.Frame.new('Chat')
-        frame_chat.add(self.chat)
+        frame_chat.add(vbox_chat)
         self.grid.attach(frame_chat, 0, 1, 1, 4)
         frame_subscriber = Gtk.Frame.new('New subscribers')
         frame_subscriber.add(self.subscriber)

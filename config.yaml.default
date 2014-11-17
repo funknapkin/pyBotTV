@@ -5,6 +5,7 @@ irc:
     user: 'username'
     password: 'oauth:your_key_here'
     buffer_size: 4096
+    poll_time: 0.05
     log_folder: 'irc_logs/'
 
 gui:

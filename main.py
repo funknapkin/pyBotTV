@@ -2,8 +2,11 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
+#   - Fix bug where some colors aren't displayed properly
+#       Twitch doesn't always send USERCOLOR; pick a random color
+#   - Test message order when sending message (i.e. test delay)
+#   - Fix badges when channel doesn't have a subscriber icon
 #   - Add clear button + timestamps to subscriberwidget
-#   - Add ability to send chat messages to IRC, via a Queue
 #   - Add notebook with other widgets (userlist, poll, etc.)
 #
 # Possible improvements:
@@ -11,8 +14,11 @@
 #   - Don't download emotes list every time app is opened
 #   - Predownload emotes
 #   - Save display names to file
+#   - Add option to display names the same way twitch's app does
+#       First letter capitalized, rest lower case
 
 import logging
+import queue
 import threading
 from gi.repository import Gtk
 
@@ -21,16 +27,16 @@ from lib import config
 from lib.irceventgenerator import IrcEventGenerator
 
 
-def gui_main(config, retval):
-    win = MainWindow(config)
+def gui_main(config, out_queue, retval):
+    win = MainWindow(config, out_queue)
     win.connect('delete-event', Gtk.main_quit)
     win.show_all()
     retval.append(win)
     return
 
 
-def irc_main(config, glib_func):
-    irc_event_generator = IrcEventGenerator(config, glib_func)
+def irc_main(config, out_queue, glib_func):
+    irc_event_generator = IrcEventGenerator(config, glib_func, out_queue)
     irc_event_generator.run()
     return
 
@@ -50,14 +56,15 @@ if __name__ == '__main__':
         filename=c['debug']['log-file'], filemode='w',
         level=log_levels[c['debug']['log-level']])
     # Create threads
+    out_queue = queue.Queue()
     win = []
     gui_thread = threading.Thread(
         target=gui_main, daemon=False,
-        args=(c, win))
+        args=(c, out_queue, win))
     gui_thread.start()
     gui_thread.join()
     irc_thread = threading.Thread(
         target=irc_main, daemon=True,
-        args=(c, win[0].irchandler.receive_message))
+        args=(c, out_queue, win[0].irchandler.receive_message))
     irc_thread.start()
     Gtk.main()

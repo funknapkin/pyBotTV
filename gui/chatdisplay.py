@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import os.path
+import random
 import re
 import urllib.request
 import urllib.error
@@ -115,10 +116,9 @@ class ChatDisplay(Gtk.ScrolledWindow):
             tag_iter_1 = text_buffer.get_iter_at_mark(mark_begin)
             tag_iter_2 = text_buffer.get_iter_at_mark(mark_begin)
             tag_iter_2.forward_chars(len(display_name))
-            if data[0] in self.usercolors:
-                text_tag = self.usercolors[data[0]]
-            else:
-                text_tag = self.default_tag
+            if data[0] not in self.usercolors:
+                self._set_usercolor(data[0], None)
+            text_tag = self.usercolors[data[0]]
             text_buffer.apply_tag(text_tag, tag_iter_1, tag_iter_2)
             # Add turbo and subscriber icons
             if not self.badges_initialized:
@@ -194,21 +194,7 @@ class ChatDisplay(Gtk.ScrolledWindow):
                 text_buffer.delete(iter_1, iter_2)
                 self.msg_count -= 1
         elif event == 'USERCOLOR':
-            if data[1][0] == '#':
-                color = data[1]
-            else:
-                try:
-                    color = self.default_colors[data[1]]
-                except:
-                    logging.warning('Chat: Invalid color: {0}'.format(data[1]))
-                    color = '#000000'
-            if data[0] in self.usercolors:
-                self.usercolors.move_to_end(data[0])
-            self.usercolors[data[0]] = self.text_view.get_buffer().create_tag(
-                None, weight=Pango.Weight.BOLD, foreground=color)
-            cache_size = self.config['gui']['chat_cache_size']
-            if len(self.usercolors) > cache_size:
-                self.usercolors.pop_item(last=False)
+            self._set_usercolor(data[0], data[1])
         elif event == 'EMOTESET':
             if data[0] in self.emotesets:
                 self.emotesets.move_to_end(data[0])
@@ -371,3 +357,27 @@ class ChatDisplay(Gtk.ScrolledWindow):
             self.emotes_subscriber = {}
             self.emotes_sets = {}
             self.emotes_initialized = False
+
+    def _set_usercolor(self, user, color=None):
+        """
+        Set a user's usercolor.
+
+        Args:
+            user: username
+            color: Color to set, or None to choose a default colot
+        """
+        if color is None:
+            color = random.choice(list(self.default_colors.values()))
+        if color[0] != '#':
+            try:
+                color = self.default_colors[color]
+            except:
+                logging.warning('Chat: Invalid color: {0}'.format(data[1]))
+                color = '#000000'
+        if user in self.usercolors:
+            self.usercolors.move_to_end(user)
+        self.usercolors[user] = self.text_view.get_buffer().create_tag(
+            None, weight=Pango.Weight.BOLD, foreground=color)
+        cache_size = self.config['gui']['chat_cache_size']
+        if len(self.usercolors) > cache_size:
+            self.usercolors.pop_item(last=False)

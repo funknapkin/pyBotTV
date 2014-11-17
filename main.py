@@ -2,8 +2,6 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Fix bug where some colors aren't displayed properly
-#       Twitch doesn't always send USERCOLOR; pick a random color
 #   - Fix badges when channel doesn't have a subscriber icon
 #   - Add clear button + timestamps to subscriberwidget
 #   - Add notebook with other widgets (userlist, poll, etc.)

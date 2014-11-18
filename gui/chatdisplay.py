@@ -124,15 +124,13 @@ class ChatDisplay(Gtk.ScrolledWindow):
             if not self.badges_initialized:
                 self._init_badges_data()
             if self.badges_initialized:
-                status_order = ['admin', 'broadcaster', 'mod', 'staff',
-                                'subscriber', 'turbo']
                 statuses = self.specialusers[data[0]].copy() if data[0] in \
                     self.specialusers else set()
                 if data[0] == self.config['irc']['channel'][1:]:
                     statuses.add('broadcaster')
                 elif data[0] in self.moderators:
                     statuses.add('mod')
-                for specialstatus in reversed(status_order):
+                for specialstatus in reversed(self.status_order):
                     if specialstatus in statuses:
                         image_path = os.path.join(
                             self.config['gui']['badges_path'],
@@ -201,7 +199,7 @@ class ChatDisplay(Gtk.ScrolledWindow):
             self.emotesets[data[0]] = data[1:]
             cache_size = self.config['gui']['chat_cache_size']
             if len(self.emotesets) > cache_size:
-                self.emotesets.pop_item(last=False)
+                self.emotesets.popitem(last=False)
         elif event == 'SPECIALUSER':
             if data[0] in self.specialusers:
                 self.specialusers[data[0]].add(data[1])
@@ -210,7 +208,7 @@ class ChatDisplay(Gtk.ScrolledWindow):
                 self.specialusers[data[0]] = set([data[1]])
                 cache_size = self.config['gui']['chat_cache_size']
                 if len(self.specialusers) > cache_size:
-                    self.specialusers.pop_item(last=False)
+                    self.specialusers.popitem(last=False)
 
         elif event == 'MOD':
             self.moderators.add(data[0])
@@ -300,6 +298,7 @@ class ChatDisplay(Gtk.ScrolledWindow):
         """
         Download badges data and icons.
         """
+        self.badged_initialized = False
         # Get badges data
         try:
             request = urllib.request.Request(
@@ -311,29 +310,30 @@ class ChatDisplay(Gtk.ScrolledWindow):
             j = json.loads(s)
         except:
             logging.warning('Chat: failed to get badges data')
-            self.badges_initialized = False
             return
-        to_download = ['admin', 'broadcaster', 'mod', 'staff', 'turbo',
-                       'subscriber']
-        try:
-            badges_dir = os.path.join(self.config['gui']['badges_path'],
-                                      self.config['irc']['channel'][1:])
-            os.makedirs(badges_dir, exist_ok=True)
-            for badge_name in to_download:
+        to_download = ['admin', 'broadcaster', 'mod', 'staff', 'subscriber',
+                       'turbo']
+        self.status_order = []
+        badges_dir = os.path.join(self.config['gui']['badges_path'],
+                                  self.config['irc']['channel'][1:])
+        os.makedirs(badges_dir, exist_ok=True)
+        for badge_name in to_download:
+            try:
                 badge_path = os.path.join(
                     badges_dir, '{0}.png'.format(badge_name))
                 if os.access(badge_path, os.F_OK):
+                    self.status_order.append(badge_name)
                     continue  # File already exists
                 badge_url = j[badge_name]['image']
                 badge = urllib.request.urlopen(badge_url)
                 badge_file = open(badge_path, 'wb')
                 badge_file.write(badge.read())
                 badge_file.close()
-            self.badges_initialized = True
-        except:
-            logging.warning('Chat: failed to download badges')
-            self.badges_initialized = False
-            return
+                self.status_order.append(badge_name)
+            except:
+                logging.warning(
+                    'Chat: Failed to download badge {0}'.format(badge_name))
+        self.badges_initialized = True
 
     def _init_emotes_data(self):
         """
@@ -380,4 +380,4 @@ class ChatDisplay(Gtk.ScrolledWindow):
             None, weight=Pango.Weight.BOLD, foreground=color)
         cache_size = self.config['gui']['chat_cache_size']
         if len(self.usercolors) > cache_size:
-            self.usercolors.pop_item(last=False)
+            self.usercolors.popitem(last=False)

@@ -2,8 +2,8 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Fix badges when channel doesn't have a subscriber icon
 #   - Add clear button + timestamps to subscriberwidget
+#   - Add force update button to subscriberwidget
 #   - Add notebook with other widgets (userlist, poll, etc.)
 #
 # Possible improvements:

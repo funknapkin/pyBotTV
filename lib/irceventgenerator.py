@@ -42,7 +42,7 @@ class IrcEventGenerator:
             irc_sock = Irc(self.config)
             irc_sock.set_parser(IrcParser())
             try:
-                irc_sock.connect('TWITCHCLIENT 2\r\n')
+                irc_sock.connect('TWITCHCLIENT 1\r\n')
             except IrcError as e:
                 logging.error('IRC error: {0}'.format(e.value))
                 time.sleep(1)

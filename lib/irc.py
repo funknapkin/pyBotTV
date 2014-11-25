@@ -144,7 +144,7 @@ class Irc:
             os.makedirs(self.config['irc']['log_folder'], exist_ok=True)
             log_file_path = os.path.join(self.config['irc']['log_folder'],
                                          self.config['irc']['channel']+'.log')
-            with open(log_file_path, 'a') as log_file:
+            with open(log_file_path, 'a', encoding='utf-8') as log_file:
                 log_file.write('{0} : {1}\r\n'.format(timestamp, msg))
             parsed_msg = self.parser.parse_message(msg)
             if parsed_msg is None:

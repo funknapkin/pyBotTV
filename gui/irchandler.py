@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
+from gi.repository import GLib
+
 
 class IrcHandler():
     def __init__(self, config):
@@ -25,7 +27,7 @@ class IrcHandler():
         """
         for observer, subscriptions in self.observers.items():
             if event in subscriptions:
-                observer.notify(event, data)
+                GLib.idle_add(observer.notify, event, data)
 
     def receive_message(self, msg):
         """

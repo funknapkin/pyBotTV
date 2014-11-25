@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 
+import time
 from gi.repository import Gtk, Pango
 
 
@@ -28,8 +29,10 @@ class SubscriberWidget(Gtk.ScrolledWindow):
         # Bind events and init misc stuff
         self.msg_count = 0
         self.text_view.connect('size-allocate', self.scroll_bottom)
+        self.tag_time = self.text_view.get_buffer().create_tag(
+            'time', weight=Pango.Weight.LIGHT)
         self.tag_bold = self.text_view.get_buffer().create_tag(
-            "bold", weight=Pango.Weight.BOLD)
+            'bold', weight=Pango.Weight.BOLD)
 
     def notify(self, event, data):
         """
@@ -43,13 +46,27 @@ class SubscriberWidget(Gtk.ScrolledWindow):
             text_buffer = self.text_view.get_buffer()
             if self.msg_count != 0:
                 text_buffer.insert_at_cursor('\r\n')
-            mark = text_buffer.create_mark(
+            mark_begin = text_buffer.create_mark(
                 None, text_buffer.get_end_iter(), True)
-            text_buffer.insert_at_cursor('{0} has subscribed!'.format(data[0]))
-            tag_iter_1 = text_buffer.get_iter_at_mark(mark)
+            # Add timestamp
+            timestamp = time.strftime('%H:%M:%S')
+            text_buffer.insert(text_buffer.get_end_iter(), timestamp)
+            tag_iter_1 = text_buffer.get_iter_at_mark(mark_begin)
+            tag_iter_2 = text_buffer.get_end_iter()
+            text_buffer.apply_tag(self.tag_time, tag_iter_1, tag_iter_2)
+            text_buffer.insert(text_buffer.get_end_iter(), '  ')
+            # Add subscriber message
+            mark_msg = text_buffer.create_mark(
+                None, text_buffer.get_end_iter(), True)
+            text_buffer.insert(
+                text_buffer.get_end_iter(),
+                '{0} has subscribed!'.format(data[0]))
+            tag_iter_1 = text_buffer.get_iter_at_mark(mark_msg)
             tag_iter_2 = text_buffer.get_end_iter()
             text_buffer.apply_tag(self.tag_bold, tag_iter_1, tag_iter_2)
-            text_buffer.delete_mark(mark)
+            # Cleanup mark and old messages
+            text_buffer.delete_mark(mark_begin)
+            text_buffer.delete_mark(mark_msg)
             self.msg_count += 1
             if self.msg_count > self.config['gui']['subscriber_maxmessages']:
                 iter_1 = text_buffer.get_start_iter()

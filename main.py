@@ -2,9 +2,11 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
+#   - Change MainWindow to be Application(), and move it to main thread
 #   - Add clear button + timestamps to subscriberwidget
-#   - Add force update button to subscriberwidget
 #   - Add notebook with other widgets (userlist, poll, etc.)
+#   - Cache pixbuf to avoid reading from disk at every emote
+#   - Add force update button to subscriberwidget
 #
 # Possible improvements:
 #   - Non-blocking emotes download for faster startup

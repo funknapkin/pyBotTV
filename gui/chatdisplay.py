@@ -213,7 +213,7 @@ class ChatDisplay(Gtk.ScrolledWindow):
         elif event == 'MOD':
             self.moderators.add(data[0])
         elif event == 'DEMOD':
-            self.moderators.discart(data[0])
+            self.moderators.discard(data[0])
         return
 
     def scroll_bottom(self, event, data=None):

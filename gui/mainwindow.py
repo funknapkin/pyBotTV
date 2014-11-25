@@ -8,6 +8,7 @@ from gui.chatentry import ChatEntry
 from gui.irchandler import IrcHandler
 from gui.statusbar import StatusBar
 from gui.subscriberwidget import SubscriberWidget
+from gui.subscribercontrol import SubscriberControl
 from gui.menubar import MenuBar
 
 
@@ -29,6 +30,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self._init_chat_display()
         self._init_chat_entry()
         self._init_subscriber_widget()
+        self._init_subscriber_control()
         self._init_status_bar()
         self._init_menu_bar()
         self._init_irc_handler()
@@ -69,14 +71,17 @@ class MainWindow(Gtk.ApplicationWindow):
         self.grid.set_margin_left(3)
         self.grid.set_margin_right(3)
         self.grid.attach(self.menu.menubar, 0, 0, 1, 1)
-        vbox_chat = Gtk.Box.new(Gtk.Orientation.VERTICAL, 0)
+        vbox_chat = Gtk.Box.new(Gtk.Orientation.VERTICAL, 2)
         vbox_chat.add(self.chat)
         vbox_chat.add(self.chat_entry)
         frame_chat = Gtk.Frame.new('Chat')
         frame_chat.add(vbox_chat)
         self.grid.attach(frame_chat, 0, 1, 1, 4)
+        vbox_subscriber = Gtk.Box.new(Gtk.Orientation.VERTICAL, 2)
+        vbox_subscriber.add(self.subscriber)
+        vbox_subscriber.add(self.subscriber_control)
         frame_subscriber = Gtk.Frame.new('New subscribers')
-        frame_subscriber.add(self.subscriber)
+        frame_subscriber.add(vbox_subscriber)
         self.grid.attach(frame_subscriber, 0, 5, 1, 1)
         self.grid.attach(self.status, 0, 6, 1, 1)
         self.add(self.grid)
@@ -97,3 +102,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def _init_subscriber_widget(self):
         self.subscriber = SubscriberWidget(self.config)
+
+    def _init_subscriber_control(self):
+        text_buffer = self.subscriber.text_view.get_buffer()
+        self.subscriber_control = SubscriberControl(text_buffer)

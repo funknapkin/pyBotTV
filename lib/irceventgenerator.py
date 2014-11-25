@@ -10,13 +10,14 @@ from gi.repository import GLib
 
 
 class IrcEventGenerator:
-    def __init__(self, config, glib_func):
+    def __init__(self, config, func_queue):
         """
         This class handles the Irc subclass to receive messages, and sends
         signals to the GUI after parsing those messages.
         """
         self.config = config
-        self.glib_func = glib_func
+        self.func_queue = func_queue
+        self.glib_func = None
 
     def run(self):
         """
@@ -34,6 +35,7 @@ class IrcEventGenerator:
         - DISCONNECTED: ['DISCONNECTED']
             Connection to the server lost.
         """
+        self.glib_func = self.func_queue.get()
         while True:
             # Connect to IRC
             GLib.idle_add(self.glib_func, ['CONNECTING'])

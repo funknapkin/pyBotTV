@@ -12,8 +12,24 @@ from gui.subscribercontrol import SubscriberControl
 from gui.menubar import MenuBar
 
 
+class MainApplication(Gtk.Application):
+    def __init__(self, config, out_queue, func_queue):
+        Gtk.Application.__init__(self)
+        self.config = config
+        self.out_queue = out_queue
+        self.func_queue = func_queue
+
+    def do_activate(self):
+        win = MainWindow(self, self.config, self.out_queue)
+        win.show_all()
+        self.func_queue.put(win.irchandler.receive_message)
+
+    def do_startup(self):
+        Gtk.Application.do_startup(self)
+
+
 class MainWindow(Gtk.ApplicationWindow):
-    def __init__(self, config, out_queue):
+    def __init__(self, app, config, out_queue):
         """
         This class creates the main window for this program's GUI. It
         initializes relevant widgets.
@@ -21,9 +37,10 @@ class MainWindow(Gtk.ApplicationWindow):
         Args:
             config: A dictionnary with configuration options.
         """
-        Gtk.Window.__init__(self, title='pyBotTV')
+        Gtk.Window.__init__(self, title='pyBotTV', application=app)
         self.config = config
         self.out_queue = out_queue
+        self.app = app
         # Set window options
         self.set_default_size(640, 480)
         # Init widgets
@@ -41,7 +58,7 @@ class MainWindow(Gtk.ApplicationWindow):
         Function called when the 'quit' action is activated. Calls GTK
         to close the window.
         """
-        Gtk.main_quit()
+        self.app.quit()
 
     def _init_chat_display(self):
         self.chat = ChatDisplay(self.config)

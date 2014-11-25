@@ -2,8 +2,6 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Change MainWindow to be Application(), and move it to main thread
-#   - Add clear button + timestamps to subscriberwidget
 #   - Add notebook with other widgets (userlist, poll, etc.)
 #   - Cache pixbuf to avoid reading from disk at every emote
 #   - Add force update button to subscriberwidget
@@ -18,10 +16,11 @@
 
 import logging
 import queue
+import sys
 import threading
 from gi.repository import Gtk
 
-from gui.mainwindow import MainWindow
+from gui.mainwindow import MainApplication
 from lib import config
 from lib.irceventgenerator import IrcEventGenerator
 from lib.ircsender import IrcSender
@@ -35,8 +34,8 @@ def gui_main(config, out_queue, retval):
     return
 
 
-def irc_main(config, glib_func):
-    irc_event_generator = IrcEventGenerator(config, glib_func)
+def irc_main(config, func_queue):
+    irc_event_generator = IrcEventGenerator(config, func_queue)
     irc_event_generator.run()
     return
 
@@ -63,18 +62,16 @@ if __name__ == '__main__':
         level=log_levels[c['debug']['log-level']])
     # Create threads
     out_queue = queue.Queue()
-    win = []
-    gui_thread = threading.Thread(
-        target=gui_main, daemon=False,
-        args=(c, out_queue, win))
-    gui_thread.start()
-    gui_thread.join()
+    func_queue = queue.Queue()
     irc_thread = threading.Thread(
         target=irc_main, daemon=True,
-        args=(c, win[0].irchandler.receive_message))
+        args=(c, func_queue))
     irc_thread.start()
     irc_sender_thread = threading.Thread(
         target=irc_sender_main, daemon=True,
         args=(c, out_queue))
     irc_sender_thread.start()
-    Gtk.main()
+    # Create GUI
+    app = MainApplication(c, out_queue, func_queue)
+    exit_status = app.run(sys.argv)
+    sys.exit(exit_status)

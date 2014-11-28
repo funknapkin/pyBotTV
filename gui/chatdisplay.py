@@ -80,26 +80,6 @@ class ChatDisplay(Gtk.ScrolledWindow):
             data: Additionnal data for this event
         """
         if event == 'MSG':
-            # Get display name
-            try:
-                display_name = self.display_names[data[0]]
-                self.display_names.move_to_end(data[0])
-            except KeyError:
-                try:
-                    request = urllib.request.Request(
-                        'https://api.twitch.tv/kraken/users/{0}'
-                        .format(data[0]),
-                        headers={'Accept': 'application/vnd.twitchtv.v3+json'})
-                    u = urllib.request.urlopen(request)
-                    s = u.read().decode()
-                    j = json.loads(s)
-                    display_name = j['display_name']
-                    self.display_names[data[0]] = display_name
-                    cache_size = self.config['gui']['chat_cache_size']
-                    if len(self.display_names) > cache_size:
-                        self.display_names.popitem(last=False)
-                except urllib.error.URLError:
-                    display_name = data[0]
             # Add chat message to buffer
             text_buffer = self.text_view.get_buffer()
             if self.msg_count != 0:
@@ -107,38 +87,32 @@ class ChatDisplay(Gtk.ScrolledWindow):
             mark_begin = text_buffer.create_mark(
                 None, text_buffer.get_end_iter(), True)
             text_buffer.insert(text_buffer.get_end_iter(),
-                               '{0}:  {1}'.format(display_name, data[1]))
+                               '{0}:  {1}'.format(data[0], data[1]))
             text_iter = text_buffer.get_iter_at_mark(mark_begin)
-            text_iter.forward_chars(len(display_name)+2)
+            text_iter.forward_chars(len(data[0])+2)
             mark_message = text_buffer.create_mark(
                 None, text_iter, True)
-            # Apply color to username
-            tag_iter_1 = text_buffer.get_iter_at_mark(mark_begin)
-            tag_iter_2 = text_buffer.get_iter_at_mark(mark_begin)
-            tag_iter_2.forward_chars(len(display_name))
-            if data[0] not in self.usercolors:
-                self._set_usercolor(data[0], None)
-            text_tag = self.usercolors[data[0]]
-            text_buffer.apply_tag(text_tag, tag_iter_1, tag_iter_2)
+            # Get display name
+            try:
+                display_name = self.display_names[data[0]]
+            except KeyError:
+                display_name = data[0][0].upper() + data[0][1:]
+            mark = text_buffer.create_mark(
+                None, text_buffer.get_iter_at_mark(mark_begin), False)
+            self.change_display_name(mark, data[0], new_name=display_name)
             # Add turbo and subscriber icons
             if not self.badges_initialized:
                 self._init_badges_data()
+            statuses = self.specialusers[data[0]].copy() if data[0] in \
+                self.specialusers else set()
+            if data[0] == self.config['irc']['channel'][1:]:
+                statuses.add('broadcaster')
+            elif data[0] in self.moderators:
+                statuses.add('mod')
             if self.badges_initialized:
-                statuses = self.specialusers[data[0]].copy() if data[0] in \
-                    self.specialusers else set()
-                if data[0] == self.config['irc']['channel'][1:]:
-                    statuses.add('broadcaster')
-                elif data[0] in self.moderators:
-                    statuses.add('mod')
-                for specialstatus in reversed(self.status_order):
-                    if specialstatus in statuses:
-                        image_path = os.path.join(
-                            self.config['gui']['badges_path'],
-                            self.config['irc']['channel'][1:],
-                            '{0}.png'.format(specialstatus))
-                        text_iter = text_buffer.get_iter_at_mark(mark_begin)
-                        pixbuf = GdkPixbuf.Pixbuf.new_from_file(image_path)
-                        text_buffer.insert_pixbuf(text_iter, pixbuf)
+                mark = text_buffer.create_mark(
+                    None, text_buffer.get_iter_at_mark(mark_begin), True)
+                self.add_user_icons(mark, statuses)
             # Add emotes to chat
             to_replace = []  # List of tuples with format (index, name, path)
             if not self.emotes_initialized:
@@ -146,13 +120,10 @@ class ChatDisplay(Gtk.ScrolledWindow):
             if self.emotes_initialized:
                 for globalemote in self.emotes_global.keys():
                     for match in re.finditer(globalemote, data[1]):
-                        if self._download_global_emote(globalemote):
-                            to_replace.append(tuple([
-                                match.start(),
-                                globalemote,
-                                os.path.join(
-                                    self.config['gui']['emote_globals_path'],
-                                    '{0}.png'.format(globalemote))]))
+                        to_replace.append(tuple([
+                            match.start(),
+                            globalemote,
+                            None]))
             if self.emotes_initialized and data[0] in self.emotesets:
                 for emoteset in self.emotesets[data[0]]:
                     if str(emoteset) not in self.emotes_sets:
@@ -163,25 +134,24 @@ class ChatDisplay(Gtk.ScrolledWindow):
                     for emote in self.\
                             emotes_subscriber[emoteset_name]['emotes'].keys():
                         for match in re.finditer(emote, data[1]):
-                            if self._download_subscriber_emote(
-                                    emoteset_name, emote):
-                                to_replace.append(tuple([
-                                    match.start(),
-                                    emote,
-                                    os.path.join(
-                                        self.config['gui']
-                                        ['emote_subscriber_path'],
-                                        emoteset_name,
-                                        '{0}.png'.format(emote))]))
+                            to_replace.append(tuple([
+                                match.start(),
+                                emote,
+                                emoteset_name]))
             to_replace.sort(key=lambda x: x[0], reverse=True)
-            for (index, emote, imagepath) in to_replace:
+            for (index, emote, emoteset) in to_replace:
+                image_exists = \
+                    (emoteset is None
+                     and self._download_global_emote(emote)) or \
+                    (emoteset is not None and
+                     self._download_subscriber_emote(emoteset, emote))
+                if not image_exists:
+                    continue
                 text_iter_begin = text_buffer.get_iter_at_mark(mark_message)
                 text_iter_begin.forward_chars(index+1)
-                text_iter_end = text_buffer.get_iter_at_mark(mark_message)
-                text_iter_end.forward_chars(index+len(emote)+1)
-                text_buffer.delete(text_iter_begin, text_iter_end)
-                pixbuf = GdkPixbuf.Pixbuf.new_from_file(imagepath)
-                text_buffer.insert_pixbuf(text_iter_begin, pixbuf)
+                mark = text_buffer.create_mark(
+                    None, text_iter_begin, True)
+                self.add_emote(mark, emote, emoteset)
             # Cleanup mark and old messages
             text_buffer.delete_mark(mark_begin)
             text_buffer.delete_mark(mark_message)
@@ -215,6 +185,91 @@ class ChatDisplay(Gtk.ScrolledWindow):
         elif event == 'DEMOD':
             self.moderators.discard(data[0])
         return
+
+    def add_user_icons(self, mark, statuses):
+        """
+        Add icons to indicate a user's statuses.
+
+        Args:
+            mark: Mark at the beginning of the username.
+            statuses: Set containing the user's statuses.
+        """
+        text_buffer = self.text_view.get_buffer()
+        for specialstatus in reversed(self.status_order):
+            if specialstatus in statuses:
+                image_path = os.path.join(
+                    self.config['gui']['badges_path'],
+                    self.config['irc']['channel'][1:],
+                    '{0}.png'.format(specialstatus))
+                text_iter = text_buffer.get_iter_at_mark(mark)
+                pixbuf = self.badges[specialstatus]
+                text_buffer.insert_pixbuf(text_iter, pixbuf)
+        text_buffer.delete_mark(mark)
+
+    def add_emote(self, mark, name, emoteset):
+        """
+        Add an emote to the text view.
+
+        Args:
+            mark: Mark at the emote's position.
+            name: Name of the emote.
+            emoteset: Emoteset of the emote, or None for global emotes.
+        """
+        text_buffer = self.text_view.get_buffer()
+        if emoteset is None:
+            image_path = os.path.join(
+                self.config['gui']['emote_globals_path'],
+                '{0}.png'.format(name))
+        else:
+            image_path = os.path.join(
+                self.config['gui']['emote_subscriber_path'],
+                emoteset_name,
+                '{0}.png'.format(name))
+        text_iter_begin = text_buffer.get_iter_at_mark(mark)
+        text_iter_end = text_buffer.get_iter_at_mark(mark)
+        text_iter_end.forward_chars(len(name))
+        text_buffer.delete(text_iter_begin, text_iter_end)
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(image_path)
+        text_buffer.insert_pixbuf(text_iter_begin, pixbuf)
+        text_buffer.delete_mark(mark)
+
+    def change_display_name(self, mark, username, new_name=None):
+        """
+        Function to change a user's display name. Also applies usercolor.
+
+        Args:
+            mark: Mark at the beginning of the username.
+            username: Name of the user.
+            new_name: New name to set for the user. Optional.
+        """
+        text_buffer = self.text_view.get_buffer()
+        # Set display name
+        if new_name is not None:
+            if username in self.display_names:
+                self.display_names.move_to_end(username)
+            else:
+                self.display_names[username] = new_name
+            text_iter_begin = text_buffer.get_iter_at_mark(mark)
+            found = text_iter_begin.forward_search(
+                ':', Gtk.TextSearchFlags.TEXT_ONLY, None)
+            if found:
+                text_iter_end = found[0]
+                text_buffer.delete(text_iter_begin, text_iter_end)
+                text_buffer.insert(text_iter_begin, new_name)
+                text_iter_begin.backward_chars(len(new_name))
+                text_buffer.move_mark(mark, text_iter_begin)
+        # Set color
+        if username not in self.usercolors:
+            self._set_usercolor(username, None)
+        text_tag = self.usercolors[username]
+        text_iter_begin = text_buffer.get_iter_at_mark(mark)
+        found = text_iter_begin.forward_search(
+            ':', Gtk.TextSearchFlags.TEXT_ONLY, None)
+        if found:
+            text_iter_end = found[0]
+            text_buffer.apply_tag(
+                text_tag, text_iter_begin, text_iter_end)
+        text_buffer.delete_mark(mark)
 
     def scroll_bottom(self, event, data=None):
         """
@@ -298,7 +353,8 @@ class ChatDisplay(Gtk.ScrolledWindow):
         """
         Download badges data and icons.
         """
-        self.badged_initialized = False
+        self.badges_initialized = False
+        self.badges = {}
         # Get badges data
         try:
             request = urllib.request.Request(
@@ -311,6 +367,7 @@ class ChatDisplay(Gtk.ScrolledWindow):
         except:
             logging.warning('Chat: failed to get badges data')
             return
+        # Download badges
         to_download = ['admin', 'broadcaster', 'mod', 'staff', 'subscriber',
                        'turbo']
         self.status_order = []
@@ -333,6 +390,14 @@ class ChatDisplay(Gtk.ScrolledWindow):
             except:
                 logging.warning(
                     'Chat: Failed to download badge {0}'.format(badge_name))
+        # Load badges bitmaps
+        for specialstatus in reversed(self.status_order):
+            image_path = os.path.join(
+                self.config['gui']['badges_path'],
+                self.config['irc']['channel'][1:],
+                '{0}.png'.format(specialstatus))
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(image_path)
+            self.badges[specialstatus] = pixbuf
         self.badges_initialized = True
 
     def _init_emotes_data(self):

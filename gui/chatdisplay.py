@@ -48,6 +48,7 @@ class ChatDisplay(Gtk.ScrolledWindow):
         self.display_names = OrderedDict()
         self.usercolors = OrderedDict()
         self.emotesets = OrderedDict()
+        self.emotes = OrderedDict()
         self.specialusers = OrderedDict()
         self.moderators = set()
         # Init twitch default colors
@@ -216,20 +217,28 @@ class ChatDisplay(Gtk.ScrolledWindow):
             emoteset: Emoteset of the emote, or None for global emotes.
         """
         text_buffer = self.text_view.get_buffer()
-        if emoteset is None:
-            image_path = os.path.join(
-                self.config['gui']['emote_globals_path'],
-                '{0}.png'.format(name))
+        if (name, emoteset) in self.emotes:
+            pixbuf = self.emotes[(name, emoteset)]
+            self.emotes.move_to_end((name, emoteset))
         else:
-            image_path = os.path.join(
-                self.config['gui']['emote_subscriber_path'],
-                emoteset_name,
-                '{0}.png'.format(name))
+            if emoteset is None:
+                image_path = os.path.join(
+                    self.config['gui']['emote_globals_path'],
+                    '{0}.png'.format(name))
+            else:
+                image_path = os.path.join(
+                    self.config['gui']['emote_subscriber_path'],
+                    emoteset_name,
+                    '{0}.png'.format(name))
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(image_path)
+            self.emotes[(name, emoteset)] = pixbuf
+            cache_size = self.config['gui']['chat_cache_size']
+            if len(self.emotes) > cache_size:
+                self.emotes.popitem(last=False)
         text_iter_begin = text_buffer.get_iter_at_mark(mark)
         text_iter_end = text_buffer.get_iter_at_mark(mark)
         text_iter_end.forward_chars(len(name))
         text_buffer.delete(text_iter_begin, text_iter_end)
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file(image_path)
         text_buffer.insert_pixbuf(text_iter_begin, pixbuf)
         text_buffer.delete_mark(mark)
 

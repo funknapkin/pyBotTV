@@ -2,7 +2,6 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Cache emotes pixbuf to avoid reading from disk at every emote
 #   - Rework chatdisplay to use a worker thread for time-intensive operations:
 #       read from disk, Twitch API calls, etc.
 #       Note: avoid duplicate requests

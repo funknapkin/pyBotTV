@@ -3,14 +3,20 @@
 
 import json
 import logging
+import queue
 import os
 import os.path
 import random
 import re
-import urllib.request
-import urllib.error
+import threading
 from collections import OrderedDict
 from gi.repository import Gtk, Pango, GdkPixbuf
+from gui.chatworker import ChatWorker
+
+
+def worker_main(config, queue):
+    worker = ChatWorker(config, queue)
+    worker.run()
 
 
 class ChatDisplay(Gtk.ScrolledWindow):
@@ -67,10 +73,23 @@ class ChatDisplay(Gtk.ScrolledWindow):
             'DodgerBlue': '#1E90FF',
             'HotPink': '#FF69B4',
             'BlueViolet': '#8A2BE2',
-            'SpringGreen': '#00FF7F'}
+            'SpringGreen': '#00FF7F',
+            'black': '#000000'}
+        # Spawn thread
+        self.queue = queue.Queue()
+        worker = threading.Thread(
+            target=worker_main, daemon=True,
+            args=(self.config, self.queue))
+        worker.start()
         # Download emotes and badges data
-        self._init_emotes_data()
-        self._init_badges_data()
+        self.badges_initialized = False
+        self.badges = {}
+        self.queue.put(['INIT_BADGES', self.on_badges_init])
+        self.emotes_global = {}
+        self.emotes_subscriber = {}
+        self.emotes_sets = {}
+        self.emotes_initialized = False
+        self.queue.put(['INIT_EMOTES', self.on_emotes_init])
 
     def notify(self, event, data):
         """
@@ -94,30 +113,36 @@ class ChatDisplay(Gtk.ScrolledWindow):
             mark_message = text_buffer.create_mark(
                 None, text_iter, True)
             # Get display name
-            try:
+            if data[0] in self.display_names:
                 display_name = self.display_names[data[0]]
-            except KeyError:
+                mark = text_buffer.create_mark(
+                    None, text_buffer.get_iter_at_mark(mark_begin), False)
+                self.change_display_name(mark, data[0], new_name=display_name)
+            else:
                 display_name = data[0][0].upper() + data[0][1:]
-            mark = text_buffer.create_mark(
-                None, text_buffer.get_iter_at_mark(mark_begin), False)
-            self.change_display_name(mark, data[0], new_name=display_name)
+                mark = text_buffer.create_mark(
+                    None, text_buffer.get_iter_at_mark(mark_begin), False)
+                self.queue.put(['DISPLAY_NAME', self.change_display_name,
+                                mark, data[0]])
             # Add turbo and subscriber icons
             if not self.badges_initialized:
-                self._init_badges_data()
+                self.queue.put(['INIT_BADGES', self.on_badges_init])
             statuses = self.specialusers[data[0]].copy() if data[0] in \
                 self.specialusers else set()
             if data[0] == self.config['irc']['channel'][1:]:
                 statuses.add('broadcaster')
             elif data[0] in self.moderators:
                 statuses.add('mod')
+            mark = text_buffer.create_mark(
+                None, text_buffer.get_iter_at_mark(mark_begin), True)
             if self.badges_initialized:
-                mark = text_buffer.create_mark(
-                    None, text_buffer.get_iter_at_mark(mark_begin), True)
                 self.add_user_icons(mark, statuses)
+            else:
+                self.queue.put(['BADGE', self.add_user_icons, mark, statuses])
             # Add emotes to chat
             to_replace = []  # List of tuples with format (index, name, path)
             if not self.emotes_initialized:
-                self._init_emotes_data()
+                self.queue.put(['INIT_EMOTES', self.on_emotes_init])
             if self.emotes_initialized:
                 for globalemote in self.emotes_global.keys():
                     for match in re.finditer(globalemote, data[1]):
@@ -141,18 +166,15 @@ class ChatDisplay(Gtk.ScrolledWindow):
                                 emoteset_name]))
             to_replace.sort(key=lambda x: x[0], reverse=True)
             for (index, emote, emoteset) in to_replace:
-                image_exists = \
-                    (emoteset is None
-                     and self._download_global_emote(emote)) or \
-                    (emoteset is not None and
-                     self._download_subscriber_emote(emoteset, emote))
-                if not image_exists:
-                    continue
                 text_iter_begin = text_buffer.get_iter_at_mark(mark_message)
                 text_iter_begin.forward_chars(index+1)
                 mark = text_buffer.create_mark(
                     None, text_iter_begin, True)
-                self.add_emote(mark, emote, emoteset)
+                if self._emote_file_exists(emote, emoteset):
+                    self.add_emote(mark, emote, emoteset)
+                else:
+                    self.queue.put(['EMOTE', self.add_emote,
+                                    mark, emote, emoteset])
             # Cleanup mark and old messages
             text_buffer.delete_mark(mark_begin)
             text_buffer.delete_mark(mark_message)
@@ -180,7 +202,6 @@ class ChatDisplay(Gtk.ScrolledWindow):
                 cache_size = self.config['gui']['chat_cache_size']
                 if len(self.specialusers) > cache_size:
                     self.specialusers.popitem(last=False)
-
         elif event == 'MOD':
             self.moderators.add(data[0])
         elif event == 'DEMOD':
@@ -228,7 +249,7 @@ class ChatDisplay(Gtk.ScrolledWindow):
             else:
                 image_path = os.path.join(
                     self.config['gui']['emote_subscriber_path'],
-                    emoteset_name,
+                    emoteset,
                     '{0}.png'.format(name))
             pixbuf = GdkPixbuf.Pixbuf.new_from_file(image_path)
             self.emotes[(name, emoteset)] = pixbuf
@@ -255,9 +276,13 @@ class ChatDisplay(Gtk.ScrolledWindow):
         # Set display name
         if new_name is not None:
             if username in self.display_names:
+                self.display_names[username] = new_name
                 self.display_names.move_to_end(username)
             else:
                 self.display_names[username] = new_name
+                cache_size = self.config['gui']['chat_cache_size']
+                if len(self.display_names) > cache_size:
+                    self.display_names.popitem(last=False)
             text_iter_begin = text_buffer.get_iter_at_mark(mark)
             found = text_iter_begin.forward_search(
                 ':', Gtk.TextSearchFlags.TEXT_ONLY, None)
@@ -280,6 +305,34 @@ class ChatDisplay(Gtk.ScrolledWindow):
                 text_tag, text_iter_begin, text_iter_end)
         text_buffer.delete_mark(mark)
 
+    def on_badges_init(self, status_order):
+        """
+        Function called after badges data was initialized by the worker thread.
+        Loads pixbuf from files.
+        """
+        self.status_order = status_order
+        self.badges = {}
+        for specialstatus in reversed(self.status_order):
+            image_path = os.path.join(
+                self.config['gui']['badges_path'],
+                self.config['irc']['channel'][1:],
+                '{0}.png'.format(specialstatus))
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(image_path)
+            self.badges[specialstatus] = pixbuf
+        logging.info('Chat: badges data initialized')
+        self.badges_initialized = True
+        return
+
+    def on_emotes_init(self, emotes_global, emotes_subscriber, emotes_sets):
+        """
+        Function called when emotes data was initialized by the worker thread.
+        """
+        self.emotes_global = emotes_global
+        self.emotes_subscriber = emotes_subscriber
+        self.emotes_sets = emotes_sets
+        self.emotes_initialized = True
+        return
+
     def scroll_bottom(self, event, data=None):
         """
         Scroll to the bottom of the window.
@@ -293,144 +346,30 @@ class ChatDisplay(Gtk.ScrolledWindow):
         self.text_view.queue_draw()
         return
 
-    def _download_global_emote(self, name):
+    def _emote_file_exists(self, emote, emoteset):
         """
-        Download a single global emote to a PNG file. If the file already
-        exists, download is skipped.
+        Check if an emote's image exists.
 
         Args:
-            name: A string that describes the emote's name.
+            emote: A string that describes the emote's name.
+            emoteset: Name of the emoteset (i.e. channel name), or None for
+                      global emotes.
 
         Returns:
-            True if the file exists after this function was called,
-            False otherwise.
+            True if the file exists, false otherwise.
         """
-        os.makedirs(self.config['gui']['emote_globals_path'], exist_ok=True)
-        if os.access(os.path.join(self.config['gui']['emote_globals_path'],
-                     '{0}.png'.format(name)), os.F_OK):
-            return True
+        if emoteset is None:
+            emote_dir = self.config['gui']['emote_globals_path']
         else:
-            try:
-                emote_url = 'http:' + self.emotes_global[name]['url']
-                emote = urllib.request.urlopen(emote_url)
-                emote_file = open(
-                    os.path.join(self.config['gui']['emote_globals_path'],
-                                 '{0}.png'.format(name)),
-                    'wb')
-                emote_file.write(emote.read())
-                emote_file.close()
-            except urllib.error.URLError:
-                return False
-            except OSError:
-                return False
-            return True
-
-    def _download_subscriber_emote(self, emoteset, emotename):
-        """
-        Download a single subscriber emote to a PNG file. If the file already
-        exists, download is skipped.
-
-        Args:
-            emoteset: Name of the emoteset (i.e. channel name).
-            emotename: A string that describes the emote's name.
-
-        Returns:
-            True if the file exists after this function was called,
-            False otherwise.
-        """
-        emote_dir = os.path.join(self.config['gui']['emote_subscriber_path'],
-                                 emoteset)
-        emote_path = os.path.join(emote_dir, '{0}.png'.format(emotename))
+            emote_dir = os.path.join(
+                self.config['gui']['emote_subscriber_path'], emoteset)
+        emote_path = os.path.join(emote_dir, '{0}.png'.format(emote))
         os.makedirs(emote_dir, exist_ok=True)
         if os.access(emote_path, os.F_OK):
             return True
         else:
-            try:
-                emote_url = 'http:' + \
-                    self.emotes_subscriber[emoteset]['emotes'][emotename]
-                emote = urllib.request.urlopen(emote_url)
-                emote_file = open(emote_path, 'wb')
-                emote_file.write(emote.read())
-                emote_file.close()
-            except urllib.error.URLError:
-                return False
-            except OSError:
-                return False
-            return True
-
-    def _init_badges_data(self):
-        """
-        Download badges data and icons.
-        """
-        self.badges_initialized = False
-        self.badges = {}
-        # Get badges data
-        try:
-            request = urllib.request.Request(
-                'https://api.twitch.tv/kraken/chat/{0}/badges'
-                .format(self.config['irc']['channel'][1:]),
-                headers={'Accept': 'application/vnd.twitchtv.v3+json'})
-            u = urllib.request.urlopen(request)
-            s = u.read().decode()
-            j = json.loads(s)
-        except:
-            logging.warning('Chat: failed to get badges data')
-            return
-        # Download badges
-        to_download = ['admin', 'broadcaster', 'mod', 'staff', 'subscriber',
-                       'turbo']
-        self.status_order = []
-        badges_dir = os.path.join(self.config['gui']['badges_path'],
-                                  self.config['irc']['channel'][1:])
-        os.makedirs(badges_dir, exist_ok=True)
-        for badge_name in to_download:
-            try:
-                badge_path = os.path.join(
-                    badges_dir, '{0}.png'.format(badge_name))
-                if os.access(badge_path, os.F_OK):
-                    self.status_order.append(badge_name)
-                    continue  # File already exists
-                badge_url = j[badge_name]['image']
-                badge = urllib.request.urlopen(badge_url)
-                badge_file = open(badge_path, 'wb')
-                badge_file.write(badge.read())
-                badge_file.close()
-                self.status_order.append(badge_name)
-            except:
-                logging.warning(
-                    'Chat: Failed to download badge {0}'.format(badge_name))
-        # Load badges bitmaps
-        for specialstatus in reversed(self.status_order):
-            image_path = os.path.join(
-                self.config['gui']['badges_path'],
-                self.config['irc']['channel'][1:],
-                '{0}.png'.format(specialstatus))
-            pixbuf = GdkPixbuf.Pixbuf.new_from_file(image_path)
-            self.badges[specialstatus] = pixbuf
-        self.badges_initialized = True
-
-    def _init_emotes_data(self):
-        """
-        Download emotes data.
-        """
-        try:
-            u = urllib.request.urlopen('http://twitchemotes.com/global.json')
-            s = u.read().decode()
-            self.emotes_global = json.loads(s)
-            u = urllib.request.urlopen(
-                'http://twitchemotes.com/subscriber.json')
-            s = u.read().decode()
-            self.emotes_subscriber = json.loads(s)
-            u = urllib.request.urlopen('http://twitchemotes.com/sets.json')
-            s = u.read().decode()
-            self.emotes_sets = json.loads(s)
-            self.emotes_initialized = True
-        except urllib.error.URLError:
-            logging.warning('Chat: failed to download emotes data')
-            self.emotes_global = {}
-            self.emotes_subscriber = {}
-            self.emotes_sets = {}
-            self.emotes_initialized = False
+            return None
+        return
 
     def _set_usercolor(self, user, color=None):
         """
@@ -446,7 +385,7 @@ class ChatDisplay(Gtk.ScrolledWindow):
             try:
                 color = self.default_colors[color]
             except:
-                logging.warning('Chat: Invalid color: {0}'.format(data[1]))
+                logging.warning('Chat: Invalid color: {0}'.format(color))
                 color = '#000000'
         if user in self.usercolors:
             self.usercolors.move_to_end(user)

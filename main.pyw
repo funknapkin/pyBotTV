@@ -2,18 +2,15 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Rework chatdisplay to use a worker thread for time-intensive operations:
-#       read from disk, Twitch API calls, etc.
-#       Note: avoid duplicate requests
+#   - Save display names to file and keep complete list in worker thread
 #   - Add notebook with other widgets (userlist, poll, etc.)
 #   - Add force update button to subscriberwidget
 #   - Make sure character encoding is working properly
 #
 # Possible improvements:
-#   - Non-blocking emotes download for faster startup
+#   - Minimum retry time for badges/emotes init.
 #   - Don't download emotes list every time app is opened
 #   - Predownload emotes
-#   - Save display names to file
 #   - Add option to display names the same way twitch's app does
 #       First letter capitalized, rest lower case
 

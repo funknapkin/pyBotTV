@@ -98,14 +98,16 @@ class ChatWorker():
 
     def get_emotes_data(self, callback_function):
         try:
-            u = urllib.request.urlopen('http://twitchemotes.com/global.json')
+            u = urllib.request.urlopen(
+                'http://www.twitchemotes.com/global.json')
             s = u.read().decode()
             emotes_global = json.loads(s)
             u = urllib.request.urlopen(
-                'http://twitchemotes.com/subscriber.json')
+                'http://www.twitchemotes.com/subscriber.json')
             s = u.read().decode()
             emotes_subscriber = json.loads(s)
-            u = urllib.request.urlopen('http://twitchemotes.com/sets.json')
+            u = urllib.request.urlopen(
+                'http://www.twitchemotes.com/sets.json')
             s = u.read().decode()
             emotes_sets = json.loads(s)
             self.emotes_initialized = True

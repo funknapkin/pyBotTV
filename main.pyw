@@ -2,7 +2,7 @@
 # -*- encoding:utf-8 -*-
 
 # TODO:
-#   - Save display names to file and keep complete list in worker thread
+#   - Create a proper readme
 #   - Add notebook with other widgets (userlist, poll, etc.)
 #   - Add force update button to subscriberwidget
 #   - Make sure character encoding is working properly
@@ -13,6 +13,7 @@
 #   - Predownload emotes
 #   - Add option to display names the same way twitch's app does
 #       First letter capitalized, rest lower case
+#       Lowers delay when displaying names
 
 import logging
 import queue

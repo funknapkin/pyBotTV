@@ -58,6 +58,7 @@ class MainWindow(Gtk.ApplicationWindow):
         Function called when the 'quit' action is activated. Calls GTK
         to close the window.
         """
+        self.chat.save_display_names()
         self.app.quit()
 
     def _init_chat_display(self):

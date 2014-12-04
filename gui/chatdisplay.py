@@ -9,8 +9,9 @@ import os.path
 import random
 import re
 import threading
+import yaml
 from collections import OrderedDict
-from gi.repository import Gtk, Pango, GdkPixbuf
+from gi.repository import Gtk, Pango, GdkPixbuf, GLib
 from gui.chatworker import ChatWorker
 
 
@@ -51,12 +52,25 @@ class ChatDisplay(Gtk.ScrolledWindow):
         self.text_view.connect('size-allocate', self.scroll_bottom)
         self.default_tag = self.text_view.get_buffer().create_tag(
             "default", weight=Pango.Weight.BOLD, foreground='#000000')
-        self.display_names = OrderedDict()
         self.usercolors = OrderedDict()
         self.emotesets = OrderedDict()
         self.emotes = OrderedDict()
         self.specialusers = OrderedDict()
         self.moderators = set()
+        # Init display names
+        display_names_file_path = self.config['gui']['display_names_file']
+        if os.access(display_names_file_path, os.F_OK):
+            yaml_file = open(display_names_file_path, 'r')
+            try:
+                display_names_data = yaml.load(yaml_file, yaml.Loader)
+            except AttributeError:
+                display_names_data = yaml.load(yaml_file, yaml.CLoader)
+            self.display_names = OrderedDict(display_names_data)
+        else:
+            self.display_names = OrderedDict()
+        GLib.timeout_add_seconds(
+            self.config['gui']['display_names_save_interval'],
+            self.save_display_names)
         # Init twitch default colors
         self.default_colors = {
             'Red': '#FF0000',
@@ -280,7 +294,7 @@ class ChatDisplay(Gtk.ScrolledWindow):
                 self.display_names.move_to_end(username)
             else:
                 self.display_names[username] = new_name
-                cache_size = self.config['gui']['chat_cache_size']
+                cache_size = self.config['gui']['display_names_cache_size']
                 if len(self.display_names) > cache_size:
                     self.display_names.popitem(last=False)
             text_iter_begin = text_buffer.get_iter_at_mark(mark)
@@ -332,6 +346,15 @@ class ChatDisplay(Gtk.ScrolledWindow):
         self.emotes_sets = emotes_sets
         self.emotes_initialized = True
         return
+
+    def save_display_names(self, *args, **kwargs):
+        """
+        Save display names to the file defined in the config.
+        """
+        file = open(self.config['gui']['display_names_file'], 'w')
+        yaml.dump(dict(self.display_names), file)
+        file.close()
+        return True
 
     def scroll_bottom(self, event, data=None):
         """

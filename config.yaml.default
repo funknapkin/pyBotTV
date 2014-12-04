@@ -15,6 +15,9 @@ gui:
     chat_maxmessages: 200
     chat_linespacing: 0
     chat_cache_size: 500
+    display_names_cache_size: 10000
+    display_names_file: './resources/display_names.yaml'
+    display_names_save_interval: 300
     subscriber_maxmessages: 50
 
 debug:

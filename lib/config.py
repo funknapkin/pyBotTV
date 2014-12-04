@@ -45,6 +45,12 @@ def config(yaml_path):
         data['gui']['chat_maxmessages'] = int(data['gui']['chat_maxmessages'])
         data['gui']['chat_linespacing'] = int(data['gui']['chat_linespacing'])
         data['gui']['chat_cache_size'] = int(data['gui']['chat_cache_size'])
+        data['gui']['display_names_cache_size'] = \
+            int(data['gui']['display_names_cache_size'])
+        data['gui']['display_names_file'] = \
+            str(data['gui']['display_names_file'])
+        data['gui']['display_names_save_interval'] = \
+            int(data['gui']['display_names_save_interval'])
         data['gui']['subscriber_maxmessages'] = int(
             data['gui']['subscriber_maxmessages'])
         data['debug']['log-level'] = str(data['debug']['log-level'])

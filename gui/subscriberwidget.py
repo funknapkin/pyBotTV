@@ -45,7 +45,7 @@ class SubscriberWidget(Gtk.ScrolledWindow):
         if event == 'SUBSCRIBER':
             text_buffer = self.text_view.get_buffer()
             if self.msg_count != 0:
-                text_buffer.insert_at_cursor('\r\n')
+                text_buffer.insert(text_buffer.get_end_iter(), '\r\n')
             mark_begin = text_buffer.create_mark(
                 None, text_buffer.get_end_iter(), True)
             # Add timestamp

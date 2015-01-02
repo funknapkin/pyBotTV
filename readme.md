@@ -24,7 +24,7 @@ Installation and requirements
     * [Python 3](https://www.python.org/downloads/) or above;
     * [GTK+](http://www.gtk.org/download/);
     * [PyGObject](https://wiki.gnome.org/action/show/Projects/PyGObject);
-    * [PyYAML](), also available on [pip](https://pypi.python.org/pypi/PyYAML).
+    * [PyYAML](http://pyyaml.org/), also available on [pip](https://pypi.python.org/pypi/PyYAML).
 * Download a copy of this repository. You can either use `git` or click the
   `Download ZIP` button on the right of this page;
 * Modify the configuration file to your liking. See the section below;
